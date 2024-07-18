@@ -19,21 +19,23 @@ class CTime:
             return True
         return False
 
-    def add(self, o):
-        """
-        Adds two CTime objects 
-        """
-        assert isinstance(o, CTime)
-        min = self.minute
-        excess = min // 60
-        rem = min % 60
-        self.setTime(self.hour + o.hour + excess, rem)
-
     def check(self):
         """
         A helper method to check whether or not the time is a valid time or not
         """
         assert 0 <= self.hour < 24 and 0 <= self.minute < 60
+
+    def add(self, o):
+        """
+        Adds two CTime objects
+        """
+        assert isinstance(o, CTime)
+        min = self.minute + o.minute
+        excess = min // 60
+        rem = min % 60
+        hour = self.hour + o.hour + excess
+        self.setTime(hour % 24, rem)
+        self.check()
 
     def add_time(self, hour=0, minute=0):
         """
@@ -66,7 +68,22 @@ class CTime:
 
     # ========== Get and Set methods ==========
     def setTime(self, hour, minute):
+        """
+        Sets a new hour and minute for the time
+        """
         assert isinstance(hour, int) and isinstance(minute, int)
         assert 0 <= hour < 24 and 0 <= minute < 60
         self.hour = hour
         self.minute = minute
+
+    def getHour(self):
+        """
+        Gets the hour
+        """
+        return self.hour
+
+    def getMinute(self):
+        """
+        Gets the minute
+        """
+        return self.minute
