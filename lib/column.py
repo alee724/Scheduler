@@ -88,12 +88,15 @@ class Column(Lst):
         @parameter rows: is the integer number of rows that the column should contain
         """
         myAssert(isinstance(label, str), BadArgument)
-        super().__init__(self, rows, None)
+        super().__init__(rows, None)
         self.label = label
 
     def add_item(self, index, item, size=1):
         """
         Modifies self.contents by adding an item of some size to the list
+
+        Raises a BadArgument exception if there is an overlap between existing items and the
+        newly added one
 
         @parameter index: an integer
         @parameter item: the item to be added to the list at some index
@@ -123,8 +126,8 @@ class Column(Lst):
 
     def remove_item(self, index):
         """
-        Removes an item specified at an index and does nothing if there is no item at the index
-        given
+        Removes an item specified at an index and raises a BadIndex Exception if there is no item
+        at the specified index
 
         @parameter index: a integer
         """
@@ -138,6 +141,8 @@ class Column(Lst):
             while self.contents[ind] == 0:
                 self.contents[ind] = None
                 ind += 1
+        else:
+            raise BadIndex
         self.check()
 
     # ========== Set and Get methods ==========

@@ -1,5 +1,5 @@
-class CTime(int):
-    def __init__(self, hour, minute):
+class CTime:
+    def __init__(self, hour=0, minute=0):
         """
         Creates a CTime class that represents military time starting at some initial time
 
@@ -19,37 +19,15 @@ class CTime(int):
             return True
         return False
 
-    def __lt__(self, o):
+    def add(self, o):
         """
-        Custom less than method
+        Adds two CTime objects 
         """
-        if self.hour < o.hour:
-            return True
-        elif self.hour == o.hour and self.minute < o.minute:
-            return True
-        return False
-
-    def __le__(self, o):
-        """
-        Custom less than or equal to method
-        """
-        return self == o or self < o
-
-    def __gt__(self, o):
-        """
-        Custom greater than method
-        """
-        if self.hour > o.hour:
-            return True
-        elif self.hour == o.hour and self.minute > o.minute:
-            return True
-        return False
-
-    def __ge__(self, o):
-        """
-        Custom greater than or equal to method
-        """
-        return self == 0 or self > o
+        assert isinstance(o, CTime)
+        min = self.minute
+        excess = min // 60
+        rem = min % 60
+        self.setTime(self.hour + o.hour + excess, rem)
 
     def check(self):
         """
@@ -85,3 +63,10 @@ class CTime(int):
         hour = str(self.hour) if self.hour > 9 else f"0{self.hour}"
         minute = str(self.minute) if self.minute > 9 else f"0{self.minute}"
         return f"{hour}:{minute}"
+
+    # ========== Get and Set methods ==========
+    def setTime(self, hour, minute):
+        assert isinstance(hour, int) and isinstance(minute, int)
+        assert 0 <= hour < 24 and 0 <= minute < 60
+        self.hour = hour
+        self.minute = minute

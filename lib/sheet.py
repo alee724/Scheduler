@@ -48,7 +48,7 @@ class Grid:
 
 
 class ScheduleSheet(Grid):
-    def __init__(self, numRows, start_time=8, end_time=20, interval=15):
+    def __init__(self, start_time=8, end_time=20, interval=15):
         """
         Creates a ScheduleSheet class that has an initial start and end time with some integer
         minute intervals between them
@@ -65,7 +65,7 @@ class ScheduleSheet(Grid):
 
         start_time = 0, end_time = 1, interval = 13 is not allowed
         """
-        super().__init__(self, numRows=numRows)
+        super().__init__(numRows=(end_time-start_time)*60//15)
         myAssert(
             isinstance(start_time, int)
             and isinstance(end_time, int)
@@ -94,47 +94,76 @@ class ScheduleSheet(Grid):
         rem = min % self.interval
         return len + round(rem)
 
-    def add_customer(self, col, customer, insert_time, time_span):
+    def add_customer(self, col, row, customer):
         """
         Modifies the sheet by adding [customer] to the [index] column where the customer takes up
         some [time_span] amount of time
 
-        @parameter col: integer
+        @parameter col: non-negative integer
+        @parameter row: non-negative integer
         @parameter customer: the customer to be added to the schedule
-        @insert_time: CTime object representing the time at which the customer has an appointment
-        @parameter time_span: CTime object representing the amount of time the cusomter would
-                              spend to receive services
         """
-        myAssert(isinstance(col, int) and isinstance(time_span, CTime), BadArgument)
-        col = self.getColumn(col)
-        length = time_to_length(time_span)
-        start = time_to_length(insert_time)
-        col.add_item(start, customer, length)
+        myAssert(isinstance(col, int) and isinstance(row, int), BadArgument)
+        myAssert(col >= 0 and row >= 0, BadArgument)
+        myAssert(col <= self.length, BadIndex)
+        column = self.getColumn(col)
+        column.add_item(row, customer, time_to_length(customer.getTime()))
 
-    def move_customer(self, icol, fcol, itime, ftime):
+    def move_customer(self, icol, fcol, irow, frow):
         """
-        Modifies the sheet by moving a customer in column [icol] located at approximately [itime]
-        to column [fcol] at time [ftime]. If there is no customer at the specified location then
-        nothing happens
+        Modifies the sheet by moving a customer in column [icol] located at approximately [irow]
+        to column [fcol] at time [frow].
+
+        If there is no customer at the specified location then a BadIndex Exception is raised
+        If there is an overlap then a CustomerOverlap Exception is raised
 
         @parameter icol: integer
         @parameter fcol: integer
-        @parameter itime: CTime object
-        @parameter ftime: CTime object
+        @parameter irow: integer
+        @parameter frow: integer
         """
         myAssert(isinstance(icol, int) and isinstance(fcol, int), BadArgument)
-        myAssert(isinstance(itime, CTime) and isinstance(ftime, CTime), BadArgument)
+        myAssert(isinstance(irow, int) and isinstance(frow, int), BadArgument)
         i_column = self.getColumn(icol)
         f_column = self.getColumn(fcol)
-        i_row = time_to_length(itime)
-        f_row = time_to_length(ftime)
-        customer = i_column.getItem(i_row)
+        customer = i_column.getItem(irow)
         if customer != None:
             try:
                 # yea I have to make it such that you can get the size from the customr obj
-                f_column.add_item(f_row, customer)
-                i_column.remove_item(i_row)
+                f_column.add_item(frow, customer, time_to_length(customer.getTime()))
+                i_column.remove_item(irow)
             except BadArgument:
                 raise CustomerOverlap
+        raise BadIndex
+
+    def remove_customer(self, col, row):
+        """
+        Modifies the sheet by removing a customer at some column and row 
+
+    
+
+        @parameter col: integer 
+        @parameter row: integer
+        """
+        myAssert(isinstance(icol, int) and isinstance(irow, int), BadArgument)
+        myAssert(icol <= self.length, BadIndex)
+        column = self.getColumn(col)
+        customer = column.getItem(row)
+        if customer != None:
+            column.remove_item(row)
+
+    def toString(self): 
+        tmp = list(map(lambda x: x.contents, self.columns))
+        transposed = list(zip(*tmp))
+        for row in transposed: 
+            string = ""
+            for item in row: 
+                if item == None:
+                    string += "-"
+                elif item == 0: 
+                    string += "0"
+                else: 
+                    string += "c"
+            print(f"{string}")
 
 
