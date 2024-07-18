@@ -19,7 +19,7 @@ class Customer:
             assert isinstance(s, Service)
         self.first = first
         self.last = last
-        self.services = {}
+        self.services = services
         self.phone = phone
 
         # sets time to default 0000 and then updates the time according to the services
@@ -28,11 +28,11 @@ class Customer:
 
     def update_time(self):
         """
-        Modifies the time according to the current set of services
+        Helper function that modifies the time according to the current set of services
         """
         res = CTime()
         for s in self.services:
-            res.add(s)
+            res.add(s.getTime())
         self.time = res
 
     def add_service(self, service):
@@ -43,6 +43,7 @@ class Customer:
         """
         assert isinstance(service, Service)
         set.add(self.services, service)
+        self.update_time()
 
     def remove_service(self, service):
         """
@@ -50,6 +51,7 @@ class Customer:
         """
         assert isinstance(service, Service)
         set.remove(self.services, service)
+        self.update_time()
 
     # ========== Get and Set methods ==========
 
@@ -90,6 +92,7 @@ class Customer:
         @parameter first: string if provided else None
         @parameter last: string if provided else None
         """
-        assert isinstance(first, (str, None)) and isinstance(last, (str, None))
+        assert first == None or isinstance(first, str)
+        assert last == None or isinstance(last, str)
         self.first = first if first != None else self.first
         self.last = last if last != None else self.last
