@@ -103,7 +103,7 @@ class Column(Lst):
         @parameter size: the positive integer that is the length of item to be inserted to the list
         """
         myAssert(size > 0, BadArgument)
-        myAssert(index >= len(self.contents), BadIndex)
+        myAssert(index < len(self.contents), BadIndex)
         myAssert(len(self.contents) - size >= index, BadSize)
         for i in range(index, index + size):
             if self.contents[i] != None:
@@ -118,11 +118,9 @@ class Column(Lst):
         A helper function that will obtain the poition of the item at some index.
         Assumes the item exists
         """
-        for i in self.contents[::-1]:
-            if i != 0:
-                return index
-            else:
-                index -= 1
+        while self.contents[index] == 0:
+            index -= 1
+        return index
 
     def remove_item(self, index):
         """
@@ -131,10 +129,12 @@ class Column(Lst):
 
         @parameter index: a integer
         """
-        myAssert(index >= len(self.contents), BadArgument)
+        myAssert(index <= len(self.contents), BadArgument)
         myAssert(isinstance(index, int), BadArgument)
 
-        if self.contents[index] != None:
+        if self.contents[index] not in [None, 0]: 
+            self.contents[index] = None
+        elif self.contents[index] != None:
             ind = self.get_index(index)
             self.contents[ind] = None
             ind += 1
