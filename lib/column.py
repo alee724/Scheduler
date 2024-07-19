@@ -90,6 +90,7 @@ class Column(Lst):
         myAssert(isinstance(label, str), BadArgument)
         super().__init__(rows, None)
         self.label = label
+        self.num_items = 0
 
     def add_item(self, index, item, size=1):
         """
@@ -112,6 +113,7 @@ class Column(Lst):
         for i in range(index + 1, index + size):
             self.contents[i] = 0
         self.check()
+        self.num_items += 1
 
     def get_index(self, index):
         """
@@ -132,18 +134,25 @@ class Column(Lst):
         myAssert(index <= len(self.contents), BadArgument)
         myAssert(isinstance(index, int), BadArgument)
 
-        if self.contents[index] not in [None, 0]: 
+        # remove the item first
+        if self.contents[index] not in [None, 0]:
             self.contents[index] = None
         elif self.contents[index] != None:
-            ind = self.get_index(index)
-            self.contents[ind] = None
-            ind += 1
-            while self.contents[ind] == 0:
-                self.contents[ind] = None
-                ind += 1
+            index = self.get_index(index)
+            self.contents[index] = None
         else:
             raise BadIndex
+
+        # remove placeholders
+        index += 1
+        if len(self.contents) > index:
+            for i in range(index, len(self.contents)):
+                if self.contents[i] == 0:
+                    self.contents[i] = None
+                else:
+                    break
         self.check()
+        self.num_items -= 1
 
     # ========== Set and Get methods ==========
 
@@ -168,3 +177,9 @@ class Column(Lst):
             item_index = self.get_index(index)
             return self.contents[item_index]
         return None
+
+    def getNumItems(self):
+        """
+        Returns the number of items in the column
+        """
+        return self.num_items

@@ -2,6 +2,10 @@ from column import *
 from ctime import *
 
 
+class NonemptyColumnException(Exception):
+    pass
+
+
 class Grid:
     def __init__(self, cols=1, numRows=1):
         """
@@ -14,7 +18,7 @@ class Grid:
         myAssert(cols > 0 and numRows > 0, BadArgument)
 
         self.columns = []
-        self.length = cols
+        self.length = 0
         self.numRows = numRows
         self.add_column("")
 
@@ -26,25 +30,47 @@ class Grid:
         """
         myAssert(isinstance(label, str), BadArgument)
         list.append(self.columns, Column(label, self.numRows))
+        self.length += 1
 
     def remove_column(self, index):
         """
         Modifies the list by removing a Column from the list using the list.pop method
+        The column MUST be empty in order for it to be removed
 
         @parameter index: integer where index <= length of self.columns
         """
         myAssert(isinstance(index, int), BadArgument)
         myAssert(index <= len(self.columns), BadIndex)
-        list.pop(self.columns, index)
+        if self.columns[index].getNumItems() == 0:
+            list.pop(self.columns, index)
+            self.length -= 1
+        else:
+            raise NonemptyColumnException
 
     # ========== Set and Get methods ==========
     def getColumn(self, index):
         """
-        Gets the column
+        Gets the column at index
         """
         myAssert(isinstance(index, int), BadArgument)
         myAssert(index <= len(self.columns), BadIndex)
         return self.columns[index]
+
+    def getLength(self):
+        """
+        Gets the total number of columns
+        """
+        return self.length
+
+    def getNumRows(self):
+        """
+        Gets the number of rows
+        """
+        return self.numRows
+
+
+class CustomerOverlap(Exception):
+    pass
 
 
 class ScheduleSheet(Grid):
@@ -65,7 +91,7 @@ class ScheduleSheet(Grid):
 
         start_time = 0, end_time = 1, interval = 13 is not allowed
         """
-        super().__init__(numRows=(end_time-start_time)*60//15)
+        super().__init__(numRows=(end_time - start_time) * 60 // 15)
         myAssert(
             isinstance(start_time, int)
             and isinstance(end_time, int)
@@ -80,9 +106,6 @@ class ScheduleSheet(Grid):
         self.end = CTime(hour=end_time)
         self.interval = interval
 
-    class CustomerOverlap(Exception):
-        pass
-
     def time_to_length(self, time):
         """
         Helper method to convert a CTime object into index length where each unit length is of
@@ -91,7 +114,7 @@ class ScheduleSheet(Grid):
         myAssert(isinstance(time, CTime), BadArgument)
         min = time.asMinutes()
         len = min // self.interval
-        rem = min % self.interval
+        rem = (min % self.interval) / self.interval
         return len + round(rem)
 
     def add_customer(self, col, row, customer):
@@ -107,9 +130,9 @@ class ScheduleSheet(Grid):
         myAssert(col >= 0 and row >= 0, BadArgument)
         myAssert(col <= self.length, BadIndex)
         column = self.getColumn(col)
-        column.add_item(row, customer, time_to_length(customer.getTime()))
+        column.add_item(row, customer, self.time_to_length(customer.getTime()))
 
-    def move_customer(self, icol, fcol, irow, frow):
+    def move_customer(self, icol, irow, fcol, frow):
         """
         Modifies the sheet by moving a customer in column [icol] located at approximately [irow]
         to column [fcol] at time [frow].
@@ -129,41 +152,60 @@ class ScheduleSheet(Grid):
         customer = i_column.getItem(irow)
         if customer != None:
             try:
-                # yea I have to make it such that you can get the size from the customr obj
-                f_column.add_item(frow, customer, time_to_length(customer.getTime()))
+                f_column.add_item(
+                    frow, customer, self.time_to_length(customer.getTime())
+                )
                 i_column.remove_item(irow)
             except BadArgument:
                 raise CustomerOverlap
-        raise BadIndex
+        else:
+            raise BadIndex
 
     def remove_customer(self, col, row):
         """
-        Modifies the sheet by removing a customer at some column and row 
+        Modifies the sheet by removing a customer at some column and row
 
-    
-
-        @parameter col: integer 
+        @parameter col: integer
         @parameter row: integer
         """
-        myAssert(isinstance(icol, int) and isinstance(irow, int), BadArgument)
-        myAssert(icol <= self.length, BadIndex)
+        myAssert(isinstance(col, int) and isinstance(row, int), BadArgument)
+        myAssert(col <= self.length, BadIndex)
         column = self.getColumn(col)
         customer = column.getItem(row)
         if customer != None:
             column.remove_item(row)
 
-    def toString(self): 
+    def toString(self):
+        """
+        Converts the grid into a visible representation
+        """
         tmp = list(map(lambda x: x.contents, self.columns))
         transposed = list(zip(*tmp))
-        for row in transposed: 
+        for row in transposed:
             string = ""
-            for item in row: 
+            for item in row:
                 if item == None:
                     string += "-"
-                elif item == 0: 
+                elif item == 0:
                     string += "0"
-                else: 
+                else:
                     string += "c"
             print(f"{string}")
 
+    def getInterval(self):
+        """
+        Gets the interval
+        """
+        return self.interval
 
+    def getStart(self):
+        """
+        Gets the start time
+        """
+        return self.start
+
+    def getEnd(self):
+        """
+        Gets the end time
+        """
+        return self.end
