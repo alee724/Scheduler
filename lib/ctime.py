@@ -11,6 +11,13 @@ class CTime:
         self.hour = hour
         self.minute = minute
 
+    def toJSON(self): 
+        json = {
+                "hour": self.hour,
+                "minute": self.minute
+                }
+        return json
+
     def __eq__(self, o):
         """
         Custom equals method

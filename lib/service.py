@@ -23,6 +23,15 @@ class Service:
         self.time = time_span
         self.abbrev = abb
 
+    def toJSON(self):
+        json = {
+            "name": self.name,
+            "price": self.price,
+            "time": self.time.toJSON(),
+            "abbreviation": self.abbrev,
+        }
+        return json
+
     # ========== Get and Set methods ==========
     def getName(self):
         """

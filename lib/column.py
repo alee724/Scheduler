@@ -55,7 +55,7 @@ class Lst:
 
 class BadArgument(Exception):
     """
-    Excpetion for when a bad argument was given causing an error
+    Exception for when a bad argument was given causing an error
     """
 
     pass
@@ -91,6 +91,23 @@ class Column(Lst):
         super().__init__(rows, None)
         self.label = label
         self.num_items = 0
+
+    def toJSON(self):
+        """
+        Returns a json file representation for a column
+        """
+        item_json_list = []
+        if self.num_items != 0:
+            for i in range(len(self.contents)):
+                if self.contents[i] in [None, 0]:
+                    continue
+                else:
+                    list.append(item_json_list, (self.contents[i].toJSON(), i))
+        json = {
+            "label": self.label,
+            "items": item_json_list,
+        }
+        return json
 
     def add_item(self, index, item, size=1):
         """

@@ -26,6 +26,18 @@ class Customer:
         self.time = CTime()
         self.update_time()
 
+    def toJSON(self):
+        services_json_list = []
+        for s in self.services:
+            list.append(services_json_list, s.toJSON())
+        json = {
+            "first": self.first,
+            "last": self.last,
+            "services": services_json_list,
+            "phone": self.phone,
+        }
+        return json
+
     def update_time(self):
         """
         Helper function that modifies the time according to the current set of services

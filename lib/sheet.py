@@ -53,7 +53,7 @@ class Grid:
         Gets the column at index
         """
         myAssert(isinstance(index, int), BadArgument)
-        myAssert(index <= len(self.columns), BadIndex)
+        myAssert(index < self.length, BadIndex)
         return self.columns[index]
 
     def getLength(self):
@@ -105,6 +105,18 @@ class ScheduleSheet(Grid):
         self.start = CTime(hour=start_time)
         self.end = CTime(hour=end_time)
         self.interval = interval
+
+    def toJSON(self):
+        column_json_list = []
+        for c in self.columns:
+            list.append(column_json_list, c.toJSON())
+        json = {
+            "start": self.start.toJSON(),
+            "end": self.end.toJSON(),
+            "interval": self.interval,
+            "columns": column_json_list,
+        }
+        return json
 
     def time_to_length(self, time):
         """
@@ -192,6 +204,7 @@ class ScheduleSheet(Grid):
                     string += "c"
             print(f"{string}")
 
+    # ========== Get and Set methods ==========
     def getInterval(self):
         """
         Gets the interval
@@ -209,3 +222,10 @@ class ScheduleSheet(Grid):
         Gets the end time
         """
         return self.end
+
+    def setColumnName(self, ind, name):
+        """
+        Sets the column at index ind to a new name
+        """
+        col = self.getColumn(ind)
+        col.setLabel(name)
