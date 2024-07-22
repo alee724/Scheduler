@@ -1,7 +1,7 @@
 """
 Alvin Lee
 
-A module for obtaining the total price of customers from a schedule sheet as a json
+A module for obtaining the gross profit from a schedule sheet json
 """
 
 import json

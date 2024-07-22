@@ -23,7 +23,7 @@ def initialize_customers():
 
 
 class TestGrid(unittest.TestCase):
-    def test_add(self):
+    def test_add_columns(self):
         x = Grid()
         self.assertEqual(x.getLength(), 0)
         x.add_column("")
@@ -53,7 +53,7 @@ class TestGrid(unittest.TestCase):
         x.add_column("")
         self.assertEqual(x.getLength(), 13)
 
-    def test_remove(self):
+    def test_remove_columns(self):
         x = Grid()
         self.assertEqual(x.getLength(), 0)
         x.add_column("")

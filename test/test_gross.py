@@ -1,9 +1,9 @@
 import sys
 
 sys.path.insert(0, "../lib/")
-from sheet import *
+from gross import *
 import unittest
-from price import *
+from sheet import *
 
 
 s1 = Service("P", 18, CTime(0, 30))
@@ -18,7 +18,7 @@ c4 = Customer("d", "o", {s3, s4})
 c5 = Customer("e", "p", {s1, s2, s3, s4, s5})
 
 
-class TestPrice(unittest.TestCase):
+class TestGross(unittest.TestCase):
     def test_getTotal(self):
         x = ScheduleSheet()
         x.add_column("")

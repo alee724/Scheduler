@@ -17,7 +17,8 @@ class Grid:
         @parameter cols: positive integer
         @parameter numRows: positive integer
         """
-        myAssert(isinstance(cols, int) and isinstance(numRows, int), BadArgument)
+        myAssert(isinstance(cols, int), BadArgument)
+        myAssert(isinstance(numRows, int), BadArgument)
         myAssert(cols >= 0 and numRows > 0, BadArgument)
 
         self.columns = []
@@ -97,8 +98,8 @@ class ScheduleSheet(Grid):
             super().__init__(numRows=(end_time - start_time) * 60 // 15)
             myAssert(
                 isinstance(start_time, int)
-                and isinstance(end_time, int)
                 and isinstance(interval, int)
+                and isinstance(end_time, int)
                 and end_time > start_time,
                 BadArgument,
             )
@@ -161,7 +162,8 @@ class ScheduleSheet(Grid):
         @parameter row: non-negative integer
         @parameter customer: the customer to be added to the schedule
         """
-        myAssert(isinstance(col, int) and isinstance(row, int), BadArgument)
+        myAssert(isinstance(col, int), BadArgument)
+        myAssert(isinstance(row, int), BadArgument)
         myAssert(col >= 0 and row >= 0, BadArgument)
         myAssert(col <= self.length, BadIndex)
         column = self.getColumn(col)
@@ -180,8 +182,13 @@ class ScheduleSheet(Grid):
         @parameter irow: integer
         @parameter frow: integer
         """
-        myAssert(isinstance(icol, int) and isinstance(fcol, int), BadArgument)
-        myAssert(isinstance(irow, int) and isinstance(frow, int), BadArgument)
+        myAssert(
+            isinstance(icol, int)
+            and isinstance(irow, int)
+            and isinstance(fcol, int)
+            and isinstance(frow, int),
+            BadArgument,
+        )
         i_column = self.getColumn(icol)
         f_column = self.getColumn(fcol)
         customer = i_column.getItem(irow)
@@ -203,7 +210,8 @@ class ScheduleSheet(Grid):
         @parameter col: integer
         @parameter row: integer
         """
-        myAssert(isinstance(col, int) and isinstance(row, int), BadArgument)
+        myAssert(isinstance(col, int), BadArgument)
+        myAssert(isinstance(row, int), BadArgument)
         myAssert(col <= self.length, BadIndex)
         column = self.getColumn(col)
         customer = column.getItem(row)
