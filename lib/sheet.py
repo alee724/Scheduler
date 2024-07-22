@@ -218,6 +218,72 @@ class ScheduleSheet(Grid):
         if customer != None:
             column.remove_item(row)
 
+    def split_customer(self, col, row, services):
+        """
+        Modifies a customer at some col and row and creates a new customer with the same attributes
+        such that the old customer transfers one or more services to the new customer
+
+        @parameter col: int representing the column index
+        @parameter row: int representing the row index
+        @parameter services: the set of services that are to be transferred to the new customer
+
+        Requires that the input set of services is a proper subset the customer set of services
+        """
+        myAssert(isinstance(col, int), BadArgument)
+        myAssert(isinstance(row, int), BadArgument)
+        myAssert(isinstance(services, set), BadArgument)
+        myAssert(col <= self.length, BadIndex)
+        column = self.getColumn(col)
+        customer = column.getItem(row)
+        if customer != None:
+            myAssert(0 < len(services) < len(customer.getServices()), BadArgument)
+            myAssert(set.issubset(services, customer.getServices()), BadArgument)
+            for s in services:
+                customer.remove_service(s)
+            ind = column.get_index(row)
+            column.remove_item(ind)
+            new_customer = Customer(
+                customer.getFirst(), customer.getLast(), services, customer.getPhone()
+            )
+            new_size = self.time_to_length(customer.getTime())
+            column.add_item(ind, customer, new_size)
+            self.add_customer(col, ind + new_size, new_customer)
+
+    def set_customer_services(self, col, row, services=None):
+        """
+        Uses the Customer.setServices method to replace the set of services for a customer
+
+        @parameter col: int representing the column index
+        @parameter row: int representing the row index
+        @parameter services: the set of services that will replace the current set of services
+                             for a customer at col, row
+        """
+        if services == None:
+            pass
+        else:
+            myAssert(isinstance(col, int), BadArgument)
+            myAssert(isinstance(row, int), BadArgument)
+            myAssert(isinstance(services, set), BadArgument)
+            for s in services:
+                myAssert(isinstance(s, Service), BadArgument)
+            column = self.getColumn(col)
+            customer = column.getItem(row)
+            ind = column.get_index(row)
+            self.remove_customer(col, row)
+            try:
+                self.add_customer(
+                    col,
+                    ind,
+                    Customer(
+                        customer.getFirst(),
+                        customer.getLast(),
+                        services,
+                        customer.getPhone(),
+                    ),
+                )
+            except BadArgument:
+                self.add_customer(col, ind, customer)
+
     def toString(self):
         """
         Converts the grid into a visible representation

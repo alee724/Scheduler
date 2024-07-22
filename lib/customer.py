@@ -38,12 +38,13 @@ class Customer:
         }
         return json
 
-    def fromJSON(self): 
-        if isinstance(self, str): 
-            import json 
+    def fromJSON(self):
+        if isinstance(self, str):
+            import json
+
             self = json.loads(self)
         services = set()
-        for s in self["services"]: 
+        for s in self["services"]:
             set.add(services, Service.fromJSON(s))
         return Customer(self["first"], self["last"], services, self["phone"])
 
@@ -105,6 +106,12 @@ class Customer:
         Returns the time
         """
         return self.time
+
+    def getPhone(self):
+        """
+        Returns the phone number
+        """
+        return self.phone
 
     def setName(self, first=None, last=None):
         """

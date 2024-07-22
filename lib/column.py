@@ -115,6 +115,9 @@ class Column(Lst):
         return json
 
     def fromJSON(self, numRows=1):
+        """
+        Returns a Column object from a json 
+        """
         if isinstance(self, str):
             import json
 

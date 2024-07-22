@@ -10,5 +10,6 @@ TODO:
 
 
 ISSUES:
-- realized that the sheet doesn't update when there are updates made to the set of services that a customer wants
-- change the columns such that the place holders are not all 0s but scale with "distance" from the item index 
+
+NOTES: 
+- maybe change the columns such that the place holders are not all 0s but scale with "distance" from the item index 
