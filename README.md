@@ -4,5 +4,6 @@ Scheduler backend development using python. Finished the backend work for the sc
 - make a server 
 - connect to google drive 
 - create a gui for the scheduler 
-- make a json file conversion for the sheet and vice versa 
 
+
+- currently a problem from loading from a json, maybe try using th json module to convert instead of direct conversion to a string

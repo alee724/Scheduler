@@ -1,5 +1,8 @@
 from column import *
 from ctime import *
+import json
+from customer import *
+from ctime import *
 
 
 class NonemptyColumnException(Exception):
@@ -7,7 +10,7 @@ class NonemptyColumnException(Exception):
 
 
 class Grid:
-    def __init__(self, cols=1, numRows=1):
+    def __init__(self, cols=0, numRows=1):
         """
         Creates a Grid class with a at least one default column with some positive number of rows
 
@@ -15,12 +18,11 @@ class Grid:
         @parameter numRows: positive integer
         """
         myAssert(isinstance(cols, int) and isinstance(numRows, int), BadArgument)
-        myAssert(cols > 0 and numRows > 0, BadArgument)
+        myAssert(cols >= 0 and numRows > 0, BadArgument)
 
         self.columns = []
         self.length = 0
         self.numRows = numRows
-        self.add_column("")
 
     def add_column(self, label):
         """
@@ -74,7 +76,7 @@ class CustomerOverlap(Exception):
 
 
 class ScheduleSheet(Grid):
-    def __init__(self, start_time=8, end_time=20, interval=15):
+    def __init__(self, start_time=8, end_time=20, interval=15, json_dict=None):
         """
         Creates a ScheduleSheet class that has an initial start and end time with some integer
         minute intervals between them
@@ -91,32 +93,53 @@ class ScheduleSheet(Grid):
 
         start_time = 0, end_time = 1, interval = 13 is not allowed
         """
-        super().__init__(numRows=(end_time - start_time) * 60 // 15)
-        myAssert(
-            isinstance(start_time, int)
-            and isinstance(end_time, int)
-            and isinstance(interval, int)
-            and end_time > start_time,
-            BadArgument,
-        )
-        myAssert(
-            interval > 0 and ((end_time - start_time) * 60) % interval == 0, BadArgument
-        )
-        self.start = CTime(hour=start_time)
-        self.end = CTime(hour=end_time)
-        self.interval = interval
+        if json_dict == None:
+            super().__init__(numRows=(end_time - start_time) * 60 // 15)
+            myAssert(
+                isinstance(start_time, int)
+                and isinstance(end_time, int)
+                and isinstance(interval, int)
+                and end_time > start_time,
+                BadArgument,
+            )
+            myAssert(
+                interval > 0 and ((end_time - start_time) * 60) % interval == 0,
+                BadArgument,
+            )
+            self.start = CTime(hour=start_time)
+            self.end = CTime(hour=end_time)
+            self.interval = interval
+        else:  # what should occur when there is a json attached
+            dictionary = json.loads(json_dict)
+            super().__init__(
+                numRows=(dictionary["end"] - dictionary["start"]) * 60 // 15
+            )
+            self.start = CTime(hour=dictionary["start"])
+            self.end = CTime(hour=dictionary["end"])
+            self.interval = dictionary["interval"]
+            self.fromJSON(dictionary["columns"])
 
     def toJSON(self):
+        """
+        Converts the schedule sheet to a json script
+        """
         column_json_list = []
         for c in self.columns:
             list.append(column_json_list, c.toJSON())
-        json = {
-            "start": self.start.toJSON(),
-            "end": self.end.toJSON(),
+        json_dict = {
+            "start": self.start.getHour(),
+            "end": self.end.getHour(),
             "interval": self.interval,
             "columns": column_json_list,
         }
-        return json
+        return json.dumps(json_dict)
+
+    def fromJSON(self, column_lst):
+        columns = []
+        for col in column_lst:
+            list.append(columns, Column.fromJSON(col, self.numRows))
+        self.columns = columns
+        self.length = len(self.columns)
 
     def time_to_length(self, time):
         """

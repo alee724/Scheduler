@@ -38,6 +38,15 @@ class Customer:
         }
         return json
 
+    def fromJSON(self): 
+        if isinstance(self, str): 
+            import json 
+            self = json.loads(self)
+        services = set()
+        for s in self["services"]: 
+            set.add(services, Service.fromJSON(s))
+        return Customer(self["first"], self["last"], services, self["phone"])
+
     def update_time(self):
         """
         Helper function that modifies the time according to the current set of services

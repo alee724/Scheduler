@@ -11,12 +11,16 @@ class CTime:
         self.hour = hour
         self.minute = minute
 
-    def toJSON(self): 
-        json = {
-                "hour": self.hour,
-                "minute": self.minute
-                }
+    def toJSON(self):
+        json = {"hour": self.hour, "minute": self.minute}
         return json
+
+    def fromJSON(self):
+        if isinstance(self, str):
+            import json
+
+            self = json.loads(self)
+        return CTime(self["hour"], self["minute"])
 
     def __eq__(self, o):
         """

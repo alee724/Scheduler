@@ -25,6 +25,8 @@ def initialize_customers():
 class TestGrid(unittest.TestCase):
     def test_add(self):
         x = Grid()
+        self.assertEqual(x.getLength(), 0)
+        x.add_column("")
         self.assertEqual(x.getLength(), 1)
         x.add_column("")
         self.assertEqual(x.getLength(), 2)
@@ -53,6 +55,8 @@ class TestGrid(unittest.TestCase):
 
     def test_remove(self):
         x = Grid()
+        self.assertEqual(x.getLength(), 0)
+        x.add_column("")
         self.assertEqual(x.getLength(), 1)
         x.add_column("")
         self.assertEqual(x.getLength(), 2)
@@ -75,12 +79,14 @@ class TestGrid(unittest.TestCase):
 class TestSheet(unittest.TestCase):
     def test_init(self):
         x = ScheduleSheet()
+        x.add_column("")
         self.assertEqual(x.getInterval(), 15)
         self.assertEqual(x.getStart(), CTime(8, 0))
         self.assertEqual(x.getEnd(), CTime(20, 0))
 
     def test_time_to_len(self):
         x = ScheduleSheet()
+        x.add_column("")
         self.assertEqual(x.time_to_length(CTime(1, 0)), 4)
         self.assertEqual(x.time_to_length(CTime(1, 5)), 4)
         self.assertEqual(x.time_to_length(CTime(1, 10)), 5)
@@ -88,6 +94,7 @@ class TestSheet(unittest.TestCase):
 
     def test_add_customer(self):
         x = ScheduleSheet(start_time=0, end_time=1)
+        x.add_column("")
         c1, c2, c3, c4, c5 = initialize_customers()
         x.add_customer(0, 0, c1)
         try:
@@ -95,6 +102,7 @@ class TestSheet(unittest.TestCase):
         except BadArgument:
             pass
         y = ScheduleSheet(start_time=0, end_time=4)
+        y.add_column("")
         y.add_customer(0, 4, c2)
         try:
             y.add_customer(0, 1, c1)
@@ -104,6 +112,7 @@ class TestSheet(unittest.TestCase):
 
     def test_move_customer(self):
         x = ScheduleSheet(start_time=0, end_time=4)
+        x.add_column("")
         c1, c2, c3, c4, c5 = initialize_customers()
         x.add_customer(0, 0, c1)
         x.add_customer(0, 4, c2)
@@ -124,6 +133,7 @@ class TestSheet(unittest.TestCase):
 
     def test_remove_customer(self):
         x = ScheduleSheet(start_time=0, end_time=4)
+        x.add_column("")
         c1, c2, c3, c4, c5 = initialize_customers()
         x.add_customer(0, 0, c1)
         x.add_customer(0, 4, c2)

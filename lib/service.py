@@ -32,6 +32,14 @@ class Service:
         }
         return json
 
+    def fromJSON(self):
+        if isinstance(self, str):
+            import json
+
+            self = json.loads(self)
+        time = CTime.fromJSON(self["time"])
+        return Service(self["name"], self["price"], time, self["abbreviation"])
+
     # ========== Get and Set methods ==========
     def getName(self):
         """

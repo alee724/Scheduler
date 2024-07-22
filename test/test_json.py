@@ -1,11 +1,11 @@
+import sys
+
+sys.path.insert(0, "../lib/")
 from sheet import *
 from ctime import *
 from service import *
 from customer import *
 import unittest
-import sys
-
-sys.path.insert(0, "../lib/")
 
 s1 = Service("P", 18, CTime(0, 30))
 s2 = Service("M", 20, CTime(0, 30))
@@ -26,6 +26,7 @@ class TestJSON(unittest.TestCase):
 
     def test_sheet(self):
         x = ScheduleSheet()
+        x.add_column("")
         x.setColumnName(0, "column 1")
         x.add_column("column 2")
         x.add_customer(0, 0, c1)
@@ -39,8 +40,10 @@ class TestJSON(unittest.TestCase):
         x.add_column("test")
         x.add_column("column 3")
         x.add_customer(7, 0, c5)
-        print(x.toJSON())
-
+        j1 = x.toJSON()
+        ScheduleSheet(json_dict=j1)
+        
 
 if __name__ == "__main__":
     unittest.main()
+

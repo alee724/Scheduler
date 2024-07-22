@@ -7,6 +7,8 @@ and some number of columns. The sheet will be made with a nested list where the 
 columns.
 """
 
+from customer import *
+
 
 def myAssert(condition, action):
     """
@@ -102,12 +104,25 @@ class Column(Lst):
                 if self.contents[i] in [None, 0]:
                     continue
                 else:
-                    list.append(item_json_list, (self.contents[i].toJSON(), i))
+                    list.append(
+                        item_json_list,
+                        (i, self.contents[i].toJSON(), self.contents[i].size),
+                    )
         json = {
             "label": self.label,
             "items": item_json_list,
         }
         return json
+
+    def fromJSON(self, numRows=1):
+        if isinstance(self, str):
+            import json
+
+            self = json.loads(self)
+        col = Column(self["label"], rows=numRows)
+        for item in self["items"]:
+            col.add_item(item[0], Customer.fromJSON(item[1]), item[2])
+        return col
 
     def add_item(self, index, item, size=1):
         """
@@ -127,6 +142,9 @@ class Column(Lst):
             if self.contents[i] != None:
                 raise BadArgument
         self.contents[index] = item
+        # this is here for testing reasons and we can't attach attributes to ints, bools, etc.
+        if isinstance(item, Customer):
+            item.size = size
         for i in range(index + 1, index + size):
             self.contents[i] = 0
         self.check()
