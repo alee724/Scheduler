@@ -1,11 +1,10 @@
-import unittest
-from customer import *
-from service import *
-from ctime import *
-from sheet import *
 import sys
 
 sys.path.insert(0, "../lib/")
+from sheet import *
+import unittest
+from price import *
+
 
 s1 = Service("P", 18, CTime(0, 30))
 s2 = Service("M", 20, CTime(0, 30))
@@ -19,12 +18,8 @@ c4 = Customer("d", "o", {s3, s4})
 c5 = Customer("e", "p", {s1, s2, s3, s4, s5})
 
 
-class TestJSON(unittest.TestCase):
-    """
-    More of a visual test if anything
-    """
-
-    def test_sheet(self):
+class TestPrice(unittest.TestCase):
+    def test_getTotal(self):
         x = ScheduleSheet()
         x.add_column("")
         x.setColumnName(0, "column 1")
@@ -40,8 +35,13 @@ class TestJSON(unittest.TestCase):
         x.add_column("test")
         x.add_column("column 3")
         x.add_customer(7, 0, c5)
-        j1 = x.toJSON()
-        ScheduleSheet(json_dict=j1)
+        j = x.toJSON()
+        self.assertEqual(getPrice(j), 384)
+
+    def test_empty(self):
+        x = ScheduleSheet()
+        j = x.toJSON()
+        self.assertEqual(getPrice(j), 0)
 
 
 if __name__ == "__main__":
