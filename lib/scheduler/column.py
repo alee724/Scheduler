@@ -2,9 +2,8 @@
 Alvin Lee
 July 17, 2024
 
-This is the module for creating and managing items on a sheet comprising of some number of rows
-and some number of columns. The sheet will be made with a nested list where the inner lists are
-columns.
+This module is responsible for managing what items can be placed and what items can not due to
+size restrictions or overlaps
 """
 
 from customer import *
@@ -116,7 +115,7 @@ class Column(Lst):
 
     def fromJSON(self, numRows=1):
         """
-        Returns a Column object from a json 
+        Returns a Column object from a json
         """
         if isinstance(self, str):
             import json

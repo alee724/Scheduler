@@ -5,7 +5,7 @@ from ctime import *
 from sheet import *
 import sys
 
-sys.path.insert(0, "../lib/")
+sys.path.insert(0, "../lib/scheduler/")
 
 s1 = Service("P", 18, CTime(0, 30))
 s2 = Service("M", 20, CTime(0, 30))

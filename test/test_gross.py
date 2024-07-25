@@ -3,6 +3,7 @@ import sys
 sys.path.insert(0, "../lib/")
 from gross import *
 import unittest
+sys.path.insert(0, "../lib/scheduler/")
 from sheet import *
 
 

@@ -4,7 +4,7 @@ import unittest
 from customer import *
 import sys
 
-sys.path.insert(0, "../lib/")
+sys.path.insert(0, "../lib/scheduler/")
 
 global s1, s2, s3, s4, s5
 s1 = Service("P", 10, CTime(0, 30))

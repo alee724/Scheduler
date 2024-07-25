@@ -1,9 +1,16 @@
+"""
+Alvin Lee
+
+This module is responsible for what data a customer would need and how to obtain that data and
+manipulate it if needed
+"""
+
 from ctime import *
 from service import *
 
 
 class Customer:
-    def __init__(self, first, last, services={}, phone="0000000000"):
+    def __init__(self, first, last, services={}, phone="0000000000", served=False):
         """
         Creates the customer class that contains the information regarding what services a customer
         wants, their name, and phone number
@@ -21,6 +28,7 @@ class Customer:
         self.last = last
         self.services = services
         self.phone = phone
+        self.served = served
 
         # sets time to default 0000 and then updates the time according to the services
         self.time = CTime()
@@ -35,6 +43,7 @@ class Customer:
             "last": self.last,
             "services": services_json_list,
             "phone": self.phone,
+            "served": self.served,
         }
         return json
 
@@ -46,7 +55,9 @@ class Customer:
         services = set()
         for s in self["services"]:
             set.add(services, Service.fromJSON(s))
-        return Customer(self["first"], self["last"], services, self["phone"])
+        return Customer(
+            self["first"], self["last"], services, self["phone"], self["served"]
+        )
 
     def update_time(self):
         """
@@ -112,6 +123,19 @@ class Customer:
         Returns the phone number
         """
         return self.phone
+
+    def getServed(self):
+        """
+        Returns whether the customer has been served or not
+        """
+        return self.served
+
+    def setServed(self, new):
+        """
+        Sets a new boolean value for served
+        """
+        assert isinstance(new, bool)
+        self.served = new
 
     def setName(self, first=None, last=None):
         """

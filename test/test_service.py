@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, "../lib/")
+sys.path.insert(0, "../lib/scheduler/")
 from ctime import *
 from service import *
 import unittest

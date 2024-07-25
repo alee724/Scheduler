@@ -1,3 +1,10 @@
+"""
+Alvin Lee
+
+This module is responsible for keeping track of time in military format
+"""
+
+
 class CTime:
     def __init__(self, hour=0, minute=0):
         """

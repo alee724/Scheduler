@@ -1,3 +1,10 @@
+"""
+Alvin Lee
+
+This module is responsible for keeping in track of the price, time span, name, and other attributes
+of a service
+"""
+
 from ctime import *
 
 

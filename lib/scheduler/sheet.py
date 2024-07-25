@@ -1,3 +1,10 @@
+"""
+Alvin Lee
+
+This module utilizes all the other modules in the scheduler/ directory and creates a spreadsheet
+that keeps track of where customers are, which employees have which customer, etc.
+"""
+
 from column import *
 from ctime import *
 import json
