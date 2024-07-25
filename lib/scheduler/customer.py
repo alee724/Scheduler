@@ -34,6 +34,15 @@ class Customer:
         self.time = CTime()
         self.update_time()
 
+    def __eq__(self, o):
+        """
+        Two customers are equal if and only if their name and number are the same
+        """
+        assert isinstance(o, Customer)
+        if self.first == o.first and self.last == o.last and self.phone == o.phone:
+            return True
+        return False
+
     def toJSON(self):
         services_json_list = []
         for s in self.services:

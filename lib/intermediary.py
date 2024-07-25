@@ -90,6 +90,14 @@ class Inter:
         """
         self.sheet.move_customer(icol, irow, fcol, frow)
 
+    def split_customer(self, col, row, services):
+        """
+        Uses the ScheduleSheet.split_customer method
+        """
+        for s in services:
+            assert s in self.services
+        self.sheet.split_customer(col, row, set(services))
+
     def set_customer_services(self, col, row, services):
         """
         Uses the ScheduleSheet.set_customer_services method

@@ -30,6 +30,20 @@ class Service:
         self.time = time_span
         self.abbrev = abb
 
+    def __eq__(self, o):
+        """
+        Two services are equal if and only if they have the same attributes
+        """
+        assert isinstance(o, Service)
+        if (
+            self.name == o.name
+            and self.price == o.price
+            and self.time == o.time
+            and self.abbrev == o.abbrev
+        ):
+            return True
+        return False
+
     def toJSON(self):
         json = {
             "name": self.name,
