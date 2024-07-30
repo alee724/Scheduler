@@ -238,13 +238,14 @@ class ScheduleSheet(Grid):
         """
         myAssert(isinstance(col, int), BadArgument)
         myAssert(isinstance(row, int), BadArgument)
-        myAssert(isinstance(services, set), BadArgument)
+        myAssert(isinstance(services, list), BadArgument)
         myAssert(col <= self.length, BadIndex)
         column = self.getColumn(col)
         customer = column.getItem(row)
         if customer != None:
             myAssert(0 < len(services) < len(customer.getServices()), BadArgument)
-            myAssert(set.issubset(services, customer.getServices()), BadArgument)
+            for s in services:
+                myAssert(s in customer.getServices(), BadArgument)
             for s in services:
                 customer.remove_service(s)
             ind = column.get_index(row)
@@ -270,7 +271,7 @@ class ScheduleSheet(Grid):
         else:
             myAssert(isinstance(col, int), BadArgument)
             myAssert(isinstance(row, int), BadArgument)
-            myAssert(isinstance(services, set), BadArgument)
+            myAssert(isinstance(services, list), BadArgument)
             for s in services:
                 myAssert(isinstance(s, Service), BadArgument)
             column = self.getColumn(col)

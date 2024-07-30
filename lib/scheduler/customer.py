@@ -10,7 +10,7 @@ from service import *
 
 
 class Customer:
-    def __init__(self, first, last, services={}, phone="0000000000", served=False):
+    def __init__(self, first, last, services=[], phone="0000000000", served=False):
         """
         Creates the customer class that contains the information regarding what services a customer
         wants, their name, and phone number
@@ -24,6 +24,7 @@ class Customer:
         assert len(phone) == 10
         for s in services:
             assert isinstance(s, Service)
+            assert services.count(s) == 1
         self.first = first
         self.last = last
         self.services = services
@@ -38,7 +39,10 @@ class Customer:
         """
         Two customers are equal if and only if their name and number are the same
         """
-        assert isinstance(o, Customer)
+        try:
+            assert isinstance(o, Customer)
+        except AssertionError:
+            return False
         if self.first == o.first and self.last == o.last and self.phone == o.phone:
             return True
         return False
@@ -61,9 +65,9 @@ class Customer:
             import json
 
             self = json.loads(self)
-        services = set()
+        services = []
         for s in self["services"]:
-            set.add(services, Service.fromJSON(s))
+            services.append(Service.fromJSON(s))
         return Customer(
             self["first"], self["last"], services, self["phone"], self["served"]
         )
@@ -84,15 +88,19 @@ class Customer:
         @parameter service: a Service object
         """
         assert isinstance(service, Service)
-        set.add(self.services, service)
-        self.update_time()
+        try:
+            assert self.services.count(service) == 0
+            list.append(self.services, service)
+            self.update_time()
+        except AssertionError:
+            pass
 
     def remove_service(self, service):
         """
         Removes [service] from the set of services
         """
         assert isinstance(service, Service)
-        set.remove(self.services, service)
+        list.remove(self.services, service)
         self.update_time()
 
     # ========== Get and Set methods ==========
