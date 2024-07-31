@@ -25,6 +25,7 @@ class Service:
             and isinstance(abb, str)
         )
         assert price >= 0
+        assert len(abb) <= 5
         self.name = name
         self.price = price
         self.time = time_span
