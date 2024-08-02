@@ -1,12 +1,10 @@
-import json
-from tkinter.ttk import *
-from tkinter import *
-from customer import *
-from column import *
-from service import *
 import sys
 
 sys.path.insert(0, "../lib/scheduler/")
+from tkinter.ttk import *
+from tkinter import *
+from customer import *
+from service import *
 
 
 class CustomerFrame(Frame):
@@ -16,8 +14,11 @@ class CustomerFrame(Frame):
 
         Will load in data from a Customer object if there is one or create a new customer and
         create a customer frame from customer data
+
+        The parent MUST be at least the base frame for the sheet or higher in the hierarchy,
+        may just set the parent as root if anything
         """
-        Frame.__init__(self, parent)
+        Frame.__init__(self, parent, width=100, height=100)
         assert isinstance(customer, Customer)
 
         # basic attributes needed
@@ -36,7 +37,7 @@ class CustomerFrame(Frame):
         self.services = StringVar()
         self.price = StringVar()
 
-        # Widgets using the above variables 
+        # Widgets using the above variables
         name_label = Label(
             self,
             textvariable=self.name,
@@ -124,9 +125,13 @@ class CustomerFrame(Frame):
         """
         wid = e.widget
         data = self.grid_info()
-        wid.initCol = data["column"]
-        wid.initRow = data["row"]
-        wid.rowspan = data["rowspan"]
+        if data != {}:
+            wid.initCol = data["column"]
+            wid.initRow = data["row"]
+            # also get rid of this an make the customer widget store the size data
+            wid.rowspan = data["rowspan"]
+        else:
+            wid.rowspan = 1  # need to change this to the appropriate size
         wid._start_x = e.x
         wid._start_y = e.y
 
@@ -144,10 +149,14 @@ class CustomerFrame(Frame):
         When the widget is released and needs to be grid in its new place
         """
         wid = e.widget
-        x = self.winfo_x() + (self.winfo_width()//2)
+        x = self.winfo_x() + (self.winfo_width() // 2)
         y = self.winfo_y() + 30
         grid_data = self.parent.grid_location(x, y)
         col = grid_data[0]
         row = grid_data[1]
         if True:  # replace True with a query to the sheet module
-            self.grid(in_=self.parent, column=col, row=row, rowspan=wid.rowspan)
+            self.grid(
+                in_=self.winfo_toplevel(), column=col, row=row, rowspan=wid.rowspan
+            )
+
+
