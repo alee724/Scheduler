@@ -9,13 +9,11 @@ Scheduler backend development using python. Finished the backend work for the sc
 - connect to google drive 
 
 # ISSUES:
-- currently there is a major issue with syching scrolling between the sheet and the time canvases 
-    - seems to be scrolling differing amounts per unit of scroll which is really annoying 
-    - maybe make two time frames and put them on both sides of the sheet and combine the sheet and the time canvases into one 
 - have not tried synching the backend and front end as of yet
     - need a better way to get boolean responses from the backend
 
 # NOTES: 
 - maybe change column.py such that the place holders are not all 0s but scale with "distance" from the item index 
-- may need to change the EmployeeLabel Canvas to a grid layout as the labels may not all have the same size 
-- may not need to use the item_id generated when adding widgets to the employee label canvas 
+
+# IMPORTANT:
+- need to add scroll region LAST no matter what. Else it starts messing with the scroll region leading it to go kinda everywhere but where you want it to be 

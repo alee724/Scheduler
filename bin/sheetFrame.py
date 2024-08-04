@@ -8,69 +8,9 @@ import sys
 
 sys.path.insert(0, "../lib/scheduler/")
 
-
-class TimeCanvas(Canvas):
-    def __init__(self, parent, start, end, interval, time_height, name_height):
-        """
-        Class creating a scrollable canvas of time labels
-
-        @parameter start: a CTime object
-        @parameter end: a CTime object
-        @parameter interval: integer representing the amount of minutes between time labels
-        @parameter time_height: the integer height of each row in the sheet
-        @parameter name_height: the integer height of the name labels of employees
-        """
-        Canvas.__init__(self, parent, highlightthickness=0, background="red")
-        assert isinstance(start, CTime)
-        assert isinstance(end, CTime)
-
-        # ========== Creation of Scrolling Frame ==========
-        scroll_frame = Frame(self)
-
-        # buffer frame above the time labels
-        Frame(
-            scroll_frame,
-            height=(name_height - (time_height // 2)),
-            relief="flat",
-            borderwidth=1,
-        ).pack(fill=X)
-
-        # the actual time labels
-        while start != end:
-            LabelFrame(
-                scroll_frame,
-                text=start.toString(),
-                font=("Helvetica", 16),
-                relief="flat",
-                labelanchor="e",
-                height=time_height,
-                width=45,
-            ).pack(fill=BOTH, expand=True, padx=(0, 3))
-            start.add_time(minute=interval)
-
-        # add the buffer frame below the time labels
-        Frame(
-            scroll_frame, height=(time_height // 2), relief="flat", borderwidth=1
-        ).pack(fill=X)
-
-        # ========== Adding to Canvas and Bindings ==========
-        # add the scroll frame to the canvas and add bindings for scrolling
-        self.create_window((0, 0), window=scroll_frame, anchor="nw")
-        self.bind(
-            "<Configure>",
-            lambda e, sf=scroll_frame: [
-                self.configure(scrollregion=self.bbox("all")),
-                self.configure(width=sf.winfo_width()),
-            ],
-        )
-        self.bind_all(
-            "<MouseWheel>",
-            lambda e: self.yview_scroll(-1 * (e.delta), "units")
-            # scroll only when detecting mouse movement in the y direction
-            if e.state == 0
-            else None,
-            add="+",
-        )
+COLUMN_W = 200
+ROW_H = 30
+TIME_W = 50
 
 
 class EmployeeCanvas(Canvas):
@@ -84,35 +24,50 @@ class EmployeeCanvas(Canvas):
         self.employees = []
 
         # create the scrollable frame
-        self.scroll_frame = Frame(self, relief="groove", borderwidth=1)
+        self.scroll_frame = Frame(self)
 
-        sf_id = self.create_window(
-            (0, 0), window=self.scroll_frame, anchor="nw")
+        # create buffers
+        Frame(self.scroll_frame, relief="flat", borderwidth=1, width=TIME_W).grid(
+            column=0, row=0, sticky="wns"
+        )
+        self.right = Frame(
+            self.scroll_frame, relief="flat", borderwidth=1, width=TIME_W
+        )
+        self.right.grid(column=1, row=0, sticky="nse")
+
+        self.scrollframe_id = self.create_window(
+            (0, 0), window=self.scroll_frame, anchor="nw"
+        )
+
+        # binding for resizing the width of the frame to canvas width
+        self.bind("<<AddEmployee>>", self.resize)
+        self.bind("<Configure>", lambda e: [self.resize(e), self.unbind("<Configure>")])
 
         # bindings for scrolling
         self.bind(
-            "<Configure>",
-            lambda e, sf=self.scroll_frame: [
-                self.configure(scrollregion=self.bbox("all")),
-                self.configure(height=sf.winfo_height()),
-            ],
+            "<<AddEmployee>>",
+            lambda e: self.configure(scrollregion=self.bbox("all")),
+            add="+",
         )
         self.bind_all(
             "<MouseWheel>",
             lambda e: self.xview_scroll(-1 * (e.delta), "units")
-            # scroll only when detecting mouse movement in the x direction
             if e.state == 1
             else None,
             add="+",
         )
 
-        # binding for resizing the width of the frame to canvas width
-        self.bind(
-            "<Configure>",
-            lambda e, sf_id=sf_id: self.itemconfigure(
-                sf_id, width=self.winfo_width()),
-            add="+",
-        )
+    def resize(self, *args):
+        """
+        Helper method that will be triggered by an event for resizing the frame
+        """
+        current = self.winfo_width()
+        possible = (COLUMN_W * len(self.employees)) + 100
+        if possible > current:
+            self.itemconfigure(self.scrollframe_id, width=possible)
+        else:
+            self.itemconfigure(self.scrollframe_id, width=current)
+        self.configure(height=self.scroll_frame.winfo_height())
 
     def add_employee(self, name):
         """
@@ -120,10 +75,16 @@ class EmployeeCanvas(Canvas):
         """
         assert isinstance(name, str)
         assert name not in self.employees
-        self.employees.append(name)
+        index = len(self.employees) + 1
+        self.scroll_frame.grid_columnconfigure(
+            index, weight=1, uniform="emp_cols", minsize=COLUMN_W
+        )
         Label(
             self.scroll_frame, text=name, font=("Helvetoica", 24), anchor=CENTER
-        ).pack(side=LEFT, fill=BOTH, expand=True)
+        ).grid(column=index, row=0, sticky="nsew")
+        self.employees.append(name)
+        self.right.grid(column=index + 1, row=0, sticky="nse")
+        self.event_generate("<<AddEmployee>>")
 
     def remove_employee(self, name):
         """
@@ -138,6 +99,38 @@ class EmployeeCanvas(Canvas):
                 break
 
 
+class TimeFrame(Frame):
+    def __init__(self, parent, start, end, interval):
+        """
+        Class for a frame that will display the time for the spreadsheet
+        """
+        assert isinstance(start, CTime)
+        assert isinstance(end, CTime)
+        assert end.asMinutes() > start.asMinutes()
+        assert (end.asMinutes() - start.asMinutes()) % interval == 0
+        Frame.__init__(self, parent)
+
+        # insert buffer frame at the top
+        Frame(self, borderwidth=1, relief="flat", height=ROW_H // 2).pack(fill=X)
+
+        start.add_time(minute=interval)
+        # add the time labels to the base frame
+        while start != end:
+            LabelFrame(
+                self,
+                text=start.toString(),
+                height=ROW_H,
+                width=TIME_W,
+                relief="flat",
+                font=("Helvetica", 18),
+                labelanchor="e",
+            ).pack(padx=(0, 1))
+            start.add_time(minute=interval)
+
+        # add the buffer frame at the end
+        Frame(self, borderwidth=1, relief="flat", height=ROW_H // 2).pack(fill=X)
+
+
 class SheetFrame(Frame):
     def __init__(self, parent, rows):
         """
@@ -146,29 +139,38 @@ class SheetFrame(Frame):
 
         @parameter rows: is the number of rows in the sheet
         """
-        Frame.__init__(self, parent)
+        Frame.__init__(self, parent, relief="flat", borderwidth=1)
         self.numCols = 0
         self.numRows = rows
 
         # grid Configure
-        self.grid_rowconfigure(list(range(rows)), weight=1,
-                               uniform="rows", minsize=30)
+        self.grid_rowconfigure(
+            list(range(rows)), weight=1, uniform="rows", minsize=ROW_H
+        )
 
     def add_column(self):
         """
         Adds a column to the grid by adding a column_configuration
         """
-        self.grid_columnconfigure(self.numCols, weight=1, uniform="cols")
-        if self.numCols != 0:
-            Separator(self, orient="vertical").grid(
-                column=self.numCols - 1, row=0, rowspan=self.numRows, sticky="nse"
-            )
+        self.grid_columnconfigure(
+            self.numCols, weight=1, uniform="cols", minsize=COLUMN_W
+        )
+
+        # create certical separators
+        Separator(self, orient="vertical").grid(
+            column=self.numCols, row=0, rowspan=self.numRows, sticky="nse"
+        )
         Separator(self, orient="vertical").grid(
             column=self.numCols, row=0, rowspan=self.numRows, sticky="nsw"
         )
+
+        # add hour lines if adding first column
         if self.numCols == 0:
             self.add_hourlines()
+
+        # increment the number of columns
         self.numCols += 1
+        self.event_generate("<<AddColumn>>")
 
     def add_hourlines(self):
         """
@@ -179,41 +181,72 @@ class SheetFrame(Frame):
                 s1 = Separator(self, orient="horizontal")
                 s1.grid(column=0, row=i - 1, sticky="swe")
                 self.bind(
-                    "<Configure>",
+                    "<<AddColumn>>",
                     lambda e, s1=s1, i=i: s1.grid(
-                        column=0, row=i - 1, rowspan=self.numRows, sticky="swe"
+                        column=0, row=i - 1, columnspan=self.numCols, sticky="swe"
                     ),
                     add="+",
                 )
             s2 = Separator(self, orient="horizontal")
             s2.grid(column=0, row=i, sticky="new")
             self.bind(
-                "<Configure>",
+                "<<AddColumn>>",
                 lambda e, s2=s2, i=i: s2.grid(
-                    column=0, row=i, rowspan=self.numRows, sticky="new"
+                    column=0, row=i, columnspan=self.numCols, sticky="new"
                 ),
                 add="+",
             )
 
 
 class SheetCanvas(Canvas):
+    start = 8
+    end = 20
+    interval = 15
+
     def __init__(self, parent, rows):
         """
         Class representing the canvas containing the sheet of customers and being able to add
         customers, remove them, and modify them
         """
-        Canvas.__init__(self, parent, highlightthickness=0,
-                        background="purple")
+        Canvas.__init__(self, parent, highlightthickness=0, background="purple")
+        self.numRows = rows
 
         # create the scrollable frame
-        self.scroll_frame = SheetFrame(self, rows)
-        sf_id = self.create_window(
-            (0, 0), window=self.scroll_frame, anchor="nw")
+        scroll_frame = Frame(self)
+        scroll_frame.grid_columnconfigure(1, weight=1)
+
+        left_time = TimeFrame(
+            scroll_frame,
+            CTime(self.start),
+            CTime(self.end),
+            self.interval,
+        )
+        self.sheet = SheetFrame(scroll_frame, rows)
+        right_time = TimeFrame(
+            scroll_frame,
+            CTime(self.start),
+            CTime(self.end),
+            self.interval,
+        )
+
+        # grid the frames to the scroll frame
+        left_time.grid(column=0, row=0, sticky="nsw")
+        self.sheet.grid(column=1, row=0, sticky="nsew")
+        right_time.grid(column=2, row=0, sticky="nse")
+
+        # create the window in the canvas
+        self.scrollframe_id = self.create_window(
+            (0, 0), window=scroll_frame, anchor="nw"
+        )
+
+        # binding for resizing the width of the frame to canvas width
+        self.bind("<<AddColumn>>", self.resize)
 
         # binding to make scrollable
         self.bind(
-            "<Configure>", lambda e: self.configure(
-                scrollregion=self.bbox("all"))
+            "<<AddColumn>>",
+            lambda e: self.configure(scrollregion=self.bbox("all")),
+            add="+",
         )
         self.bind_all(
             "<MouseWheel>",
@@ -223,68 +256,66 @@ class SheetCanvas(Canvas):
             add="+",
         )
 
-        # binding for resizing the width of the frame to canvas width
-        self.bind(
-            "<Configure>",
-            lambda e, sf_id=sf_id: self.itemconfigure(
-                sf_id, width=self.winfo_width()),
-            add="+",
-        )
+    def resize(self, *args):
+        """
+        Helper method that will modify the size of the scrollable frame as needed
+        """
+        current_w = self.winfo_width()
+        possible_w = (self.sheet.numCols * COLUMN_W) + (2 * TIME_W)
+        if current_w < possible_w:
+            self.itemconfigure(self.scrollframe_id, width=possible_w)
+        else:
+            self.itemconfigure(self.scrollframe_id, width=current_w)
+
+        current_h = self.winfo_height()
+        possible_h = self.numRows * ROW_H
+        if current_h < possible_h:
+            self.itemconfigure(self.scrollframe_id, height=possible_h)
 
     def add_column(self):
-        self.scroll_frame.add_column()
+        """
+        Simple method that calls on SheetFrame.add_column to add a column to the sheet frame in
+        the canvas
+        """
+        self.sheet.add_column()
+        self.event_generate("<<AddColumn>>")
 
 
 class MainSheet(Frame):
-    label_height = 36
-    row_height = 30
-    start = 8
-    end = 20
-    interval = 15
-
     def __init__(self, parent, employees=[]):
         """
-        Class for the frame that will contain all the canvases created for viewing employees,
-        the customers, and the time, each with varying scroll features
+        Class for the frame that will contain two canvases, one being the canvas for employee names
+        and the other canvas for the sheet containing the customers that will be served for that
+        day
+
+        @parameter employees: a list of names of employees
         """
         Frame.__init__(self, parent)
         for e in employees:
             assert isinstance(e, str)
-        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
         numRows = (20 - 8) * 60 // 15
 
         # create the three scrollable canvases
         self.emp_canvas = EmployeeCanvas(self)
-        time = TimeCanvas(
-            self,
-            CTime(hour=self.start),
-            CTime(hour=self.end),
-            self.interval,
-            self.row_height,
-            self.label_height,
-        )
         self.sheet = SheetCanvas(self, numRows)
 
         # add any employees if any
         for e in employees:
             self.add_employee(e)
 
-        # grid the three different canvases in their appropriate location
-        self.emp_canvas.grid(column=1, row=0, sticky="new")
-        time.grid(column=0, row=0, rowspan=2, sticky="nsw")
-        self.sheet.grid(row=1, column=1, sticky="nsew")
+        # grid the two different canvases in their appropriate location
+        self.emp_canvas.grid(column=0, row=0, sticky="new")
+        self.sheet.grid(row=1, column=0, sticky="nsew")
 
         self.bind_all(
             "<KeyPress-a>",
             lambda e: [
-                print(1),
                 self.add_employee(str(len(self.emp_canvas.employees))),
             ],
         )
-
-        self.bind_all("<KeyPress-g>", lambda e: print(self.sheet.scroll_frame.winfo_height()))
 
     def add_employee(self, name):
         """
