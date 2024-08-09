@@ -41,7 +41,8 @@ class EmployeeCanvas(Canvas):
 
         # binding for resizing the width of the frame to canvas width
         self.bind("<<AddEmployee>>", self.resize)
-        self.bind("<Configure>", lambda e: [self.resize(e), self.unbind("<Configure>")])
+        self.bind("<Configure>", lambda e: [
+                  self.resize(e), self.unbind("<Configure>")])
 
         # bindings for scrolling
         self.bind(
@@ -111,7 +112,8 @@ class TimeFrame(Frame):
         Frame.__init__(self, parent)
 
         # insert buffer frame at the top
-        Frame(self, borderwidth=1, relief="flat", height=ROW_H // 2).pack(fill=X)
+        Frame(self, borderwidth=1, relief="flat",
+              height=ROW_H // 2).pack(fill=X)
 
         start.add_time(minute=interval)
         # add the time labels to the base frame
@@ -128,7 +130,8 @@ class TimeFrame(Frame):
             start.add_time(minute=interval)
 
         # add the buffer frame at the end
-        Frame(self, borderwidth=1, relief="flat", height=ROW_H // 2).pack(fill=X)
+        Frame(self, borderwidth=1, relief="flat",
+              height=ROW_H // 2).pack(fill=X)
 
 
 class SheetFrame(Frame):
@@ -208,7 +211,8 @@ class SheetCanvas(Canvas):
         Class representing the canvas containing the sheet of customers and being able to add
         customers, remove them, and modify them
         """
-        Canvas.__init__(self, parent, highlightthickness=0, background="purple")
+        Canvas.__init__(self, parent, highlightthickness=0,
+                        background="purple")
         self.numRows = rows
 
         # create the scrollable frame

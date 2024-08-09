@@ -5,14 +5,14 @@ An intermediary module that takes in string arguments and converts them as neede
 to arguments for sheet.py if needed
 """
 
+import sys
+
+sys.path.insert(0, "scheduler/")
 import json
 from ctime import *
 from service import *
 from customer import *
 from sheet import *
-import sys
-
-sys.path.insert(0, "scheduler/")
 
 
 class QueueError(Exception):
@@ -31,9 +31,11 @@ class Inter:
         self.sheet = ScheduleSheet(json_dict=json_dict)
         self.queue = []
         with open(service_path) as file:
-            self.services = list(map(lambda s: Service.fromJSON(s), json.load(file)))
+            self.services = list(
+                map(lambda s: Service.fromJSON(s), json.load(file)))
         with open(customer_path) as file:
-            self.customers = list(map(lambda s: Customer.fromJSON(s), json.load(file)))
+            self.customers = list(
+                map(lambda s: Customer.fromJSON(s), json.load(file)))
 
     def update_services(self):
         """
@@ -106,11 +108,11 @@ class Inter:
             assert s in self.services
         self.sheet.set_customer_services(col, row, set(services))
 
-    def add_service(self, name, price, time, abb):
+    def add_service(self, name, price, hour, minute, abb):
         """
         Takes in string
         """
-        t = CTime(int(time[0]), int(time[1]))
+        t = CTime(int(hour), int(minute))
         s = Service(name, int(price), t, abb)
         self.services.append(s)
         self.update_services()

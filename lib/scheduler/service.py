@@ -33,15 +33,10 @@ class Service:
 
     def __eq__(self, o):
         """
-        Two services are equal if and only if they have the same attributes
+        Two services are equal if and only if they have the same name
         """
         assert isinstance(o, Service)
-        if (
-            self.name == o.name
-            and self.price == o.price
-            and self.time == o.time
-            and self.abbrev == o.abbrev
-        ):
+        if self.name == o.name:
             return True
         return False
 
@@ -61,6 +56,12 @@ class Service:
             self = json.loads(self)
         time = CTime.fromJSON(self["time"])
         return Service(self["name"], self["price"], time, self["abbreviation"])
+
+    def toString(self):
+        """
+        Converts a Service object to a readable string for display
+        """
+        return f"{self.name}, {self.price}, {self.time.toString()}, {self.abbrev}"
 
     # ========== Get and Set methods ==========
     def getName(self):
