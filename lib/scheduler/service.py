@@ -9,7 +9,7 @@ from ctime import *
 
 
 class Service:
-    def __init__(self, name, price, time_span, abb=""):
+    def __init__(self, name, price, time_span, abb="", sort="None"):
         """
         Creates a class for services containing all the necessary information for the scheduler
 
@@ -25,11 +25,12 @@ class Service:
             and isinstance(abb, str)
         )
         assert price >= 0
-        assert len(abb) <= 5
+        assert len(abb) <= 8
         self.name = name
         self.price = price
         self.time = time_span
         self.abbrev = abb
+        self.sorted = sort
 
     def __eq__(self, o):
         """
@@ -46,6 +47,7 @@ class Service:
             "price": self.price,
             "time": self.time.toJSON(),
             "abbreviation": self.abbrev,
+            "sorted": self.sorted,
         }
         return json
 
@@ -55,15 +57,24 @@ class Service:
 
             self = json.loads(self)
         time = CTime.fromJSON(self["time"])
-        return Service(self["name"], self["price"], time, self["abbreviation"])
+
+        return Service(
+            self["name"], self["price"], time, self["abbreviation"], self["sorted"]
+        )
 
     def toString(self):
         """
         Converts a Service object to a readable string for display
         """
-        return f"{self.name}, {self.price}, {self.time.toString()}, {self.abbrev}"
+        return f"{self.name}, ${self.price}, {self.time.toString()}, {self.abbrev}, {self.sorted}"
 
     # ========== Get and Set methods ==========
+    def getSort(self): 
+        """
+        Get the identification for where the service was sorted 
+        """
+        return self.sorted
+
     def getName(self):
         """
         Returns the name

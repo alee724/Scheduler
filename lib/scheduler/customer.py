@@ -10,7 +10,7 @@ from service import *
 
 
 class Customer:
-    def __init__(self, first, last, services=[], phone="0000000000", served=False):
+    def __init__(self, first, last="", services=[], phone="0000000000", served=False):
         """
         Creates the customer class that contains the information regarding what services a customer
         wants, their name, and phone number
@@ -25,10 +25,10 @@ class Customer:
         for s in services:
             assert isinstance(s, Service)
             assert services.count(s) == 1
-        self.first = first
-        self.last = last
+        self.first = first.strip()
+        self.last = last.strip()
         self.services = services
-        self.phone = phone
+        self.phone = phone.strip()
         self.served = served
 
         # sets time to default 0000 and then updates the time according to the services
@@ -37,15 +37,21 @@ class Customer:
 
     def __eq__(self, o):
         """
-        Two customers are equal if and only if their name and number are the same
+        Two customers are equal if and only if their number is the same
         """
         try:
             assert isinstance(o, Customer)
         except AssertionError:
             return False
-        if self.first == o.first and self.last == o.last and self.phone == o.phone:
+        if self.phone == o.phone:
             return True
         return False
+
+    def toString(self):
+        """
+        Helper method that converts a customer to a readable string
+        """
+        return f"{self.getFirst()}, {self.getPhone()}"
 
     def toJSON(self):
         services_json_list = []

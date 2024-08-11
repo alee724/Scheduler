@@ -7,12 +7,15 @@ import sys
 
 sys.path.insert(0, "../lib/scheduler/")
 
-FONT = ("Helvetica", 16)
+FONT = ("Hack Nerd Font Mono", 16)
 
 S_PATH = "../data/services.json"
 E_PATH = "../data/employees.json"
 C_PATH = "../data/customers.json"
 SCH_PATH = "../data/schedule.json"
+SRT_PATH = "../data/sort.json"
+
+SRT_KEYS = ("Nail Care", "Foot Care", "Lash", "Spa", "Waxing", "Massage", "None")
 
 
 class EmptyArgs(Exception):  # replace with a pop up warning or smth
@@ -39,7 +42,7 @@ class ViewFrame(Frame):
 
         # create the search bar
         self.searchVar = StringVar()
-        search_entry = Entry(self, textvariable=self.searchVar, font=FONT)
+        self.search_entry = Entry(self, textvariable=self.searchVar, font=FONT)
 
         # create the list box for viewing the services
         self.lb = Listbox(
@@ -51,7 +54,7 @@ class ViewFrame(Frame):
         )
 
         # create the delete button
-        delete_button = Button(
+        self.delete_button = Button(
             self,
             text="Delete",
             font=FONT,
@@ -59,9 +62,9 @@ class ViewFrame(Frame):
         )
 
         # grid the three widgets
-        search_entry.grid(row=0, column=0, sticky="ew", pady=2, padx=2)
-        self.lb.grid(column=0, row=1, sticky="nsew", padx=4, pady=4)
-        delete_button.grid(column=0, row=2, sticky="e")
+        self.search_entry.grid(row=0, column=0, sticky="ew")
+        self.lb.grid(column=0, row=1, sticky="nsew")
+        self.delete_button.grid(column=0, row=2, sticky="e")
 
         # create binding for variable or widgets
         self.lb.bind(
@@ -180,17 +183,38 @@ class ServiceAdd(Frame):
         # create appropriate entry widgets for the labels
         self.nameVar = StringVar()
         self.name = Entry(self, textvariable=self.nameVar)
-        self.price = Entry(self)
-        self.hours = Entry(self)
-        self.minutes = Entry(self)
+        self.price = Entry(
+            self,
+            validate="all",
+            validatecommand=(self.register(lambda s: s.isdigit()), "%S"),
+        )
+        self.hours = Entry(
+            self,
+            validate="all",
+            validatecommand=(self.register(lambda s: s.isdigit()), "%S"),
+        )
+        self.minutes = Entry(
+            self,
+            validate="all",
+            validatecommand=(self.register(lambda s: s.isdigit()), "%S"),
+        )
         self.abbreviation = Entry(self)
 
         # grid the entry widgets
-        self.name.grid(column=1, row=0, sticky="ne")
-        self.price.grid(column=1, row=1, sticky="ne")
-        self.hours.grid(column=1, row=2, sticky="ne")
-        self.minutes.grid(column=1, row=3, sticky="ne")
-        self.abbreviation.grid(column=1, row=4, sticky="ne")
+        self.name.grid(column=1, row=0, sticky="new")
+        self.price.grid(column=1, row=1, sticky="new")
+        self.hours.grid(column=1, row=2, sticky="new")
+        self.minutes.grid(column=1, row=3, sticky="new")
+        self.abbreviation.grid(column=1, row=4, sticky="new")
+
+        # create label and combobox for categorizing the services
+        Label(self, text="Category", font=FONT).grid(column=0, row=5, sticky="nw")
+
+        self.category = StringVar()
+        cb = ttk.Combobox(self, textvariable=self.category)
+        cb["values"] = SRT_KEYS
+
+        cb.grid(column=1, row=5, sticky="new")
 
         # create a small list box for viewing and easily selecting services to modify
         self.lb = Listbox(
@@ -201,22 +225,22 @@ class ServiceAdd(Frame):
             font=FONT,
             height=5,
         )
-        self.lb.grid(column=0, columnspan=2, row=5, sticky="nsew")
+        self.lb.grid(column=0, columnspan=2, row=6, sticky="nsew")
 
         # create relevant buttons
         create_update = Button(
             self, text="Create/Update", font=FONT, command=self.create_service
         )
-        create_update.grid(column=0, row=6, sticky="w")
+        create_update.grid(column=0, row=7, sticky="w")
         cancel = Button(
             self,
             text="Cancel",
             font=FONT,
             command=lambda: self.winfo_toplevel().destroy(),
         )
-        cancel.grid(column=1, row=6, sticky="e")
+        cancel.grid(column=1, row=7, sticky="e")
 
-        # create bindings for the listbox selection and typing in the name entry
+        # create bindings
         self.lb.bind("<<ListboxSelect>>", self.fill)
         self.nameVar.trace("w", self.search)
         self.lb.bind(
@@ -227,6 +251,7 @@ class ServiceAdd(Frame):
         )
         self.bind("<Visibility>", lambda e: [self.update_idletasks(), self.search()])
         self.bind("<Unmap>", self.empty)
+        self.bind_all("<Return>", self.create_service)
 
         # initialize the listbox
         self.search()
@@ -252,10 +277,11 @@ class ServiceAdd(Frame):
         time = string[2].split(":")
 
         self.nameVar.set(string[0])
-        self.price.insert(0, string[1])
+        self.price.insert(0, string[1].lstrip("$"))
         self.hours.insert(0, time[0].lstrip("0"))
         self.minutes.insert(0, time[1].lstrip("0"))
         self.abbreviation.insert(0, string[3])
+        self.category.set(string[4])
 
     def search(self, *args):
         """
@@ -266,9 +292,9 @@ class ServiceAdd(Frame):
             for s in self.services:
                 self.lb.insert(END, s.toString())
         else:
-            inp = self.nameVar.get().lower()
+            inp = self.nameVar.get().strip().lower()
             for s in self.services:
-                if inp in s.getName().lower() or inp in s.getAbbrev():
+                if inp in s.getName().lower() or inp in s.getAbbrev().lower():
                     self.lb.insert(END, s.toString())
 
     def check(self):
@@ -290,23 +316,37 @@ class ServiceAdd(Frame):
         except:
             raise EmptyArgs
 
-    def create_service(self):
+    def create_service(self, *args):
         """
         Creates or replaces a service in the list of services
         """
         self.check()
-        h, m = self.hours.get().lstrip("0"), self.minutes.get().lstrip("0")
+        h, m = (
+            self.hours.get().strip().lstrip("0"),
+            self.minutes.get().strip().lstrip("0"),
+        )
 
         h = 0 if h == "" else int(h)
         m = 0 if m == "" else int(m)
         t = CTime(h, m)
 
-        s = Service(self.name.get(), int(self.price.get()), t, self.abbreviation.get())
+        category = self.category.get().strip()
+        if category not in SRT_KEYS:
+            category = "None"
+
+        s = Service(
+            self.name.get().strip(),
+            int(self.price.get().strip()),
+            t,
+            self.abbreviation.get().strip(),
+            category,
+        )
         if s not in self.services:
             self.services.append(s)
         else:
             self.services.remove(s)
             self.services.append(s)
+
         self.event_generate("<<UpdateService>>")
         self.search()
 
@@ -332,7 +372,7 @@ class ServicePop(Toplevel):
 
         # add the two tabs for adding/modifying services and deleting/viewing services
         self.note.add(ServiceAdd(self.note, self.services), text="Add")
-        self.note.add(ServiceView(self.note, self.services), text="View")
+        self.note.add(ServiceView(self.note, self.services), text="Delete")
 
         # binding for updating services
         self.bind_all("<<UpdateService>>", self.update_services)
@@ -359,6 +399,9 @@ class EmployeeView(ViewFrame):
         add_button.grid(column=0, row=2, sticky="w")
         self.search()
 
+        # create bindings for ease of use
+        self.bind_all("<Return>", self.add_employee)
+
     def update_employees(self):
         """
         Updates the json file where a list of employees are stored
@@ -366,7 +409,7 @@ class EmployeeView(ViewFrame):
         with open(E_PATH, "w") as file:
             json.dump(self.view_list, file)
 
-    def add_employee(self):
+    def add_employee(self, *args):
         """
         Adds en employee to the list if not already existing
         """
@@ -513,6 +556,258 @@ class EmployeePop(Toplevel):
         self.note.add(EmployeeSchedule(self.note, self.employees), text="Schedule")
 
 
+class ServiceColumn(Frame):
+    def __init__(self, parent, services, checked):
+        """
+        A frame that will contain a list of services with check buttons
+        """
+        Frame.__init__(self, parent)
+        self.checked = checked
+        self.services = list(map(lambda s: Service.fromJSON(s), services))
+
+        self.grid_columnconfigure(0, weight=1)
+
+        # create the rows of check buttons for display
+        row_ind = 0
+        for s in self.services:
+            v = IntVar()
+            c = Checkbutton(self, text=s.getName(), font=FONT, variable=v, anchor="w")
+            c.grid(column=0, row=row_ind, sticky="new")
+            c.select() if s in self.checked else c.deselect()
+            c.bind(
+                "<ButtonPress-1>",
+                lambda e, v=v, s=s: self.checked.append(s)
+                if v.get() == 0
+                else self.checked.remove(s),
+            )
+            row_ind += 1
+
+
+class CollapseServices(Frame):
+    def __init__(self, parent, label, services, checked):
+        """
+        A frame that will contain a list of check boxes with a label at the top that can collapse
+        and expand
+        """
+        Frame.__init__(self, parent)
+        self.grid_rowconfigure(0, weight=1)
+
+        # create the label for the collapseable frame
+        l = Label(self, text=label, font=FONT, anchor="w", width=len(label) + 5)
+        l.pack_propagate(False)
+        l.grid(column=0, row=0, sticky="nw")
+
+        # create the button that will initiate collapse and expansion of the inner widgets
+        self.button_sign = StringVar()
+        self.button_sign.set("+")
+        Button(
+            l,
+            textvariable=self.button_sign,
+            font=FONT,
+            command=self.expand_collapse,
+            width=1,
+        ).pack(side="right")
+
+        # create the inner frame that will collapse and expand
+        self.exp_frame = ServiceColumn(self, services, checked)
+
+    def expand_collapse(self):
+        """
+        Helper function for expanding and collapsing the inner frame
+        """
+        if self.exp_frame.grid_info() == {}:
+            self.exp_frame.grid(column=0, columnspan=2, row=1, sticky="nsew")
+            self.exp_frame.update_idletasks()
+            self.button_sign.set("-")
+        else:
+            self.exp_frame.grid_forget()
+            self.button_sign.set("+")
+
+
+class CreateCustomer(Frame):
+    def __init__(self, parent, customers):
+        Frame.__init__(self, parent)
+        self.grid_columnconfigure([1, 3], weight=1, uniform="cust_make")
+
+        self.customers = customers
+
+        # create label widgets for the name and phone
+        Label(self, text="Name", font=FONT).grid(column=0, row=0, sticky="nw")
+        Label(self, text="Phone", font=FONT).grid(column=2, row=0, sticky="nw")
+
+        # create the entry widgets for the name and phone
+        self.name = StringVar()
+        Entry(self, textvariable=self.name, font=FONT, width=10).grid(
+            column=1, row=0, sticky="new"
+        )
+
+        self.phone = StringVar()
+        Entry(
+            self,
+            textvariable=self.phone,
+            font=FONT,
+            width=10,
+            validate="all",
+            validatecommand=(self.register(lambda s: s.isdigit()), "%S"),
+        ).grid(column=3, row=0, sticky="new")
+
+        # add the services to a dictionary sorted by their category
+        sorted_services = {}
+        for k in SRT_KEYS:
+            sorted_services[k] = []
+
+        with open(S_PATH, "r") as file:
+            services = json.load(file)
+            for s in services:
+                sorted_services[s["sorted"]].append(s)
+
+        self.checked = []
+
+        # create a buffer frame that will contain all the collapseable widgets
+        bf = Frame(self)
+        bf.grid_rowconfigure(0, weight=1)
+        bf.grid(column=0, columnspan=4, row=2, sticky="nsew")
+
+        # add the collapseable frames to the buffer frame
+        col_ind = 0
+        for key in SRT_KEYS:
+            if key != "None":
+                cs = CollapseServices(bf, key, sorted_services[key], self.checked)
+                cs.grid(column=col_ind, row=0, sticky="nsew")
+                col_ind += 1
+
+        # separator for aesthetics
+        ttk.Separator(bf, orient="horizontal").grid(
+            column=0, columnspan=len(SRT_KEYS) - 1, row=1, sticky="we", pady=(4, 0)
+        )
+
+        # create a non collapseable list of check buttons for the services categorized None
+        row_ind = 2
+        col_ind = 0
+        for s in list(map(lambda s: Service.fromJSON(s), sorted_services["None"])):
+            v = IntVar()
+            c = Checkbutton(bf, text=s.getName(), font=FONT, variable=v, anchor="w")
+            c.grid(column=col_ind, row=row_ind, sticky="new")
+            c.select() if s in self.checked else c.deselect()
+            c.bind(
+                "<ButtonPress-1>",
+                lambda e, v=v, s=s: self.checked.append(s)
+                if v.get() == 0
+                else self.checked.remove(s),
+            )
+            col_ind += 1
+            if col_ind == len(SRT_KEYS) - 1:
+                col_ind = 0
+                row_ind += 1
+
+
+class CustomerView(ViewFrame):
+    def __init__(self, parent, customers):
+        """
+        Class for viewing and modifying customers as needed
+        """
+        super().__init__(parent)
+        self.view_list = customers
+
+        # Override the search area with labels and entries for customers
+        self.search_entry.destroy()
+        self.nameVar = StringVar()
+        self.phoneVar = StringVar()
+
+        # regrid the list box and delete button
+        self.delete_button.grid(column=3, row=2, sticky="ne")
+        self.lb.grid(column=0, columnspan=4, row=1, sticky="nsew")
+        self.lb.configure(height=5)
+
+        # create the labels and the entry widgets
+        self.grid_columnconfigure([1, 3], weight=1, uniform="cust_view")
+        self.grid_columnconfigure(0, weight=0)
+        Label(self, text="Name", font=FONT).grid(column=0, row=0, sticky="nw")
+        Label(self, text="Phone", font=FONT).grid(column=2, row=0, sticky="nw")
+
+        Entry(self, textvariable=self.nameVar, font=FONT).grid(
+            column=1, row=0, sticky="nsew"
+        )
+
+        Entry(
+            self,
+            textvariable=self.phoneVar,
+            font=FONT,
+            validate="all",
+            validatecommand=(self.register(lambda s: s.isdigit()), "%S"),
+        ).grid(column=3, row=0, sticky="nsew")
+
+        # create an add/modify button
+        Button(self, text="Add/Modify", font=FONT, command=self.create_customer).grid(
+            column=0, columnspan=2, row=2, sticky="nw"
+        )
+
+        # create traces for the sting variables
+        self.nameVar.trace("w", self.search)
+        self.phoneVar.trace("w", lambda *args: self.search(phone=True))
+
+        # create binding for selecting an item in the list box
+        self.lb.bind("<<ListboxSelect>>", self.fill)
+
+        # create bindings for updating the visibility of the frame
+        self.bind("<Visibility>", lambda e: [self.update_idletasks(), self.search()])
+
+    def fill(self, e):
+        """
+        Helper method for filling in the entries in response to a selection in the list box
+        """
+        string = self.lb.get(e.widget.curselection()[0]).split(", ")
+
+        self.nameVar.set(string[0])
+        self.phoneVar.set(string[1])
+
+    def create_customer(self):
+        """
+        Helper method for taking in string inputs to make/modify a customer in the list of
+        customers that can be viewed
+
+        NOTE: NOT for making a customer frame
+        """
+        assert len(self.nameVar.get().strip()) > 0
+
+        # create the customer
+        name = self.nameVar.get().strip().split(" ")
+        last = name[1] if len(name) > 1 else ""
+        c = Customer(name[0], last, phone=self.phoneVar.get().strip())
+
+        # validate the customer
+        if c in self.view_list:
+            self.view_list.remove(c)
+        self.view_list.append(c)
+        self.search()
+
+        # raise event to update the list of customers
+        self.event_generate("<<UpdateCustomers>>")
+
+    def toString(self, customer):
+        """
+        Override the ViewFrame toString method to suit customers
+        """
+        return Customer.toString(customer)
+
+    def search(self, *args, phone=False):
+        """
+        Helper method for inputting items when searching in the entry widget
+
+        Overwritten to better suit customers
+        """
+        self.lb.delete(0, END)
+        if self.nameVar.get() == "" and self.phoneVar.get() == "":
+            for c in self.view_list:
+                self.lb.insert(END, self.toString(c))
+        else:
+            for c in self.view_list:
+                if phone and self.phoneVar.get().strip() in c.getPhone():
+                    self.lb.insert(0, self.toString(c))
+                elif self.nameVar.get().strip().lower() in c.getName().lower():
+                    self.lb.insert(END, self.toString(c))
+
+
 class CustomerPop(Toplevel):
     def __init__(self, parent):
         """
@@ -526,4 +821,27 @@ class CustomerPop(Toplevel):
         handle the data field
         """
         super().__init__(parent)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
+        # import the list of customers
+        with open(C_PATH, "r") as file:
+            self.customers = json.load(file)
+
+        # create the notebook
+        self.note = ttk.Notebook(self)
+        self.note.grid(column=0, row=0, sticky="nsew")
+
+        # add the two tabs to the notebook
+        self.note.add(CreateCustomer(self.note, self.customers), text="Add")
+        self.note.add(CustomerView(self.note, self.customers), text="Modify")
+
+        # create the binding for automatically updating the list of customers
+        self.bind_all("<<UpdateCustomers>>", self.update_customers)
+
+    def update_customers(self):
+        """
+        Helper methods for updating the list of customers in data
+        """
+        with open(C_PATH, "w") as file:
+            json.dump(self.customers, file)

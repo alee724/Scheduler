@@ -9,6 +9,8 @@ Scheduler backend development using python. Finished the backend work for the sc
 - connect to google drive 
 - need to retest the service, customer, and employee modules as I needed to changed the __eq__ definition
 - Need to try to send data via an event generated, for customers, hopefully that is possible, if not via an intermediary somehow
+- change the entries in the customer pop up to comboboxes so that we can search for a customer with an input and automatically input data
+- also need to implement adding customers to the data base and creatign a customer from pressing a button 
 
 # ISSUES:
 - have not tried synching the backend and front end as of yet
