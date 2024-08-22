@@ -24,9 +24,9 @@ class Grid:
         @parameter cols: positive integer
         @parameter numRows: positive integer
         """
-        myAssert(isinstance(cols, int), BadArgument)
-        myAssert(isinstance(numRows, int), BadArgument)
-        myAssert(cols >= 0 and numRows > 0, BadArgument)
+        assert isinstance(cols, int)
+        assert isinstance(numRows, int)
+        assert cols >= 0 and numRows > 0
 
         self.columns = []
         self.length = 0
@@ -36,34 +36,48 @@ class Grid:
         """
         Modifies the list by using the list.append method to add a Column to the grid
 
+        Returns True if the column can be added else False
+
         @parameter label: a string
         """
-        myAssert(isinstance(label, str), BadArgument)
+        assert isinstance(label, str)
+        for col in self.columns:
+            if col.label == label:
+                return False
         list.append(self.columns, Column(label, self.numRows))
         self.length += 1
+        return True
 
-    def remove_column(self, index):
+    def remove_column(self, label):
         """
         Modifies the list by removing a Column from the list using the list.pop method
         The column MUST be empty in order for it to be removed
 
-        @parameter index: integer where index <= length of self.columns
+        Returns True if the column can and is now removed, else returns False
+
+        @parameter label: the string label on the column
         """
-        myAssert(isinstance(index, int), BadArgument)
-        myAssert(index <= len(self.columns), BadIndex)
-        if self.columns[index].getNumItems() == 0:
-            list.pop(self.columns, index)
-            self.length -= 1
+        assert isinstance(index, int)
+        assert index <= len(self.columns)
+        for col in self.columns:
+            if col.label == label:
+                if col.getNumItems() == 0:
+                    list.pop(self.columns, index)
+                    self.length -= 1
+                    return True
+                else:
+                    return False
         else:
             raise NonemptyColumnException
+            return False
 
     # ========== Set and Get methods ==========
     def getColumn(self, index):
         """
         Gets the column at index
         """
-        myAssert(isinstance(index, int), BadArgument)
-        myAssert(index < self.length, BadIndex)
+        assert isinstance(index, int)
+        assert index < self.length
         return self.columns[index]
 
     def getLength(self):
@@ -103,17 +117,13 @@ class ScheduleSheet(Grid):
         """
         if json_dict == None:
             super().__init__(numRows=(end_time - start_time) * 60 // 15)
-            myAssert(
-                isinstance(start_time, int)
-                and isinstance(interval, int)
-                and isinstance(end_time, int)
-                and end_time > start_time,
-                BadArgument,
-            )
-            myAssert(
-                interval > 0 and ((end_time - start_time) * 60) % interval == 0,
-                BadArgument,
-            )
+            assert isinstance(start_time, int)
+            assert isinstance(interval, int)
+            assert isinstance(end_time, int)
+            assert end_time > start_time
+            assert interval > 0
+            assert ((end_time - start_time) * 60) % interval == 0
+
             self.start = CTime(hour=start_time)
             self.end = CTime(hour=end_time)
             self.interval = interval
@@ -126,6 +136,9 @@ class ScheduleSheet(Grid):
             self.end = CTime(hour=dictionary["end"])
             self.interval = dictionary["interval"]
             self.fromJSON(dictionary["columns"])
+
+        # create a variable for queueing customers although it will not be saved
+        self.queue = 0
 
     def toJSON(self):
         """
@@ -154,7 +167,7 @@ class ScheduleSheet(Grid):
         Helper method to convert a CTime object into index length where each unit length is of
         self.interval minutes
         """
-        myAssert(isinstance(time, CTime), BadArgument)
+        assert isinstance(time, CTime)
         min = time.asMinutes()
         len = min // self.interval
         rem = (min % self.interval) / self.interval
@@ -169,12 +182,25 @@ class ScheduleSheet(Grid):
         @parameter row: non-negative integer
         @parameter customer: the customer to be added to the schedule
         """
-        myAssert(isinstance(col, int), BadArgument)
-        myAssert(isinstance(row, int), BadArgument)
-        myAssert(col >= 0 and row >= 0, BadArgument)
-        myAssert(col <= self.length, BadIndex)
+        try:
+            assert isinstance(col, int)
+            assert isinstance(row, int)
+            assert col >= 0 and row >= 0
+            assert col <= self.length
+        except:
+            return False
         column = self.getColumn(col)
         column.add_item(row, customer, self.time_to_length(customer.getTime()))
+        return True
+
+    def serve_customer(self, col, row):
+        """
+        Helper method for changing the state of a customer's served attribute from False to True
+        """
+        column = self.getColumn(col)
+        customer = column.get_item(row)
+        customer.served = not customer.served
+        return customer.served
 
     def move_customer(self, icol, irow, fcol, frow):
         """
@@ -189,26 +215,33 @@ class ScheduleSheet(Grid):
         @parameter irow: integer
         @parameter frow: integer
         """
-        myAssert(
-            isinstance(icol, int)
-            and isinstance(irow, int)
-            and isinstance(fcol, int)
-            and isinstance(frow, int),
-            BadArgument,
-        )
+        try:
+            assert isinstance(icol, int)
+            assert isinstance(irow, int)
+            assert isinstance(fcol, int)
+            assert isinstance(frow, int)
+        except:
+            raise BadArgument
+            return False
         i_column = self.getColumn(icol)
         f_column = self.getColumn(fcol)
         customer = i_column.getItem(irow)
         if customer != None:
             try:
+                i_column.remove_item(irow)
                 f_column.add_item(
                     frow, customer, self.time_to_length(customer.getTime())
                 )
-                i_column.remove_item(irow)
-            except BadArgument:
+                return True
+            except:
+                i_column.add_item(
+                    irow, customer, self.time_to_length(customer.getTime())
+                )
                 raise CustomerOverlap
+                return False
         else:
             raise BadIndex
+        return False
 
     def remove_customer(self, col, row):
         """
@@ -217,13 +250,15 @@ class ScheduleSheet(Grid):
         @parameter col: integer
         @parameter row: integer
         """
-        myAssert(isinstance(col, int), BadArgument)
-        myAssert(isinstance(row, int), BadArgument)
-        myAssert(col <= self.length, BadIndex)
+        assert isinstance(col, int)
+        assert isinstance(row, int)
+        assert col <= self.length
         column = self.getColumn(col)
         customer = column.getItem(row)
         if customer != None:
             column.remove_item(row)
+            return True
+        return False
 
     def split_customer(self, col, row, services):
         """
@@ -236,16 +271,17 @@ class ScheduleSheet(Grid):
 
         Requires that the input set of services is a proper subset the customer set of services
         """
-        myAssert(isinstance(col, int), BadArgument)
-        myAssert(isinstance(row, int), BadArgument)
-        myAssert(isinstance(services, list), BadArgument)
-        myAssert(col <= self.length, BadIndex)
+        assert isinstance(col, int)
+        assert isinstance(row, int)
+        assert isinstance(services, list)
+        assert col <= self.length
+
         column = self.getColumn(col)
         customer = column.getItem(row)
         if customer != None:
-            myAssert(0 < len(services) < len(customer.getServices()), BadArgument)
+            assert 0 < len(services) < len(customer.getServices())
             for s in services:
-                myAssert(s in customer.getServices(), BadArgument)
+                assert s in customer.getServices()
             for s in services:
                 customer.remove_service(s)
             ind = column.get_index(row)
@@ -269,11 +305,12 @@ class ScheduleSheet(Grid):
         if services == None:
             pass
         else:
-            myAssert(isinstance(col, int), BadArgument)
-            myAssert(isinstance(row, int), BadArgument)
-            myAssert(isinstance(services, list), BadArgument)
+            assert isinstance(col, int)
+            assert isinstance(row, int)
+            assert isinstance(services, list)
+
             for s in services:
-                myAssert(isinstance(s, Service), BadArgument)
+                assert isinstance(s, Service)
             column = self.getColumn(col)
             customer = column.getItem(row)
             ind = column.get_index(row)

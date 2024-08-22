@@ -10,7 +10,7 @@ from service import *
 
 
 class Customer:
-    def __init__(self, first, last="", services=[], phone="0000000000", served=False):
+    def __init__(self, first, last="", phone="0000000000", services=[], served=False):
         """
         Creates the customer class that contains the information regarding what services a customer
         wants, their name, and phone number
@@ -75,7 +75,7 @@ class Customer:
         for s in self["services"]:
             services.append(Service.fromJSON(s))
         return Customer(
-            self["first"], self["last"], services, self["phone"], self["served"]
+            self["first"], self["last"], self["phone"], services, self["served"]
         )
 
     def update_time(self):

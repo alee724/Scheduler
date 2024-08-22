@@ -9,25 +9,6 @@ size restrictions or overlaps
 from customer import *
 
 
-def myAssert(condition, action):
-    """
-    A simple helper function that raises a specified error if a condition is not fulfilled
-
-    @parameter condition: a boolean value
-    @parameter action: the exception to be raised
-    """
-    if not condition:
-        raise action
-
-
-class IrregularLength(Exception):
-    """
-    Exception for when the length of a list exceeds predefined length or has a negative length
-    """
-
-    pass
-
-
 class Lst:
     def __init__(self, length, placeholder):
         """
@@ -37,7 +18,7 @@ class Lst:
         @parameter length: the integer length of the list
         @parameter placeholder: the default contents of the list
         """
-        myAssert(length >= 0, IrregularLength)
+        assert length >= 0
         self.length = length
         tmp = []
         for i in range(length):
@@ -71,15 +52,6 @@ class BadIndex(BadArgument):
 pass
 
 
-class BadSize(BadArgument):
-    """
-    Exception for an invalid size being given
-    """
-
-
-pass
-
-
 class Column(Lst):
     def __init__(self, label, rows=1):
         """
@@ -88,7 +60,7 @@ class Column(Lst):
         @parameter label: a string label given to the column
         @parameter rows: is the integer number of rows that the column should contain
         """
-        myAssert(isinstance(label, str), BadArgument)
+        assert isinstance(label, str)
         super().__init__(rows, None)
         self.label = label
         self.num_items = 0
@@ -126,6 +98,14 @@ class Column(Lst):
             col.add_item(item[0], Customer.fromJSON(item[1]), item[2])
         return col
 
+    def get_item(self, index):
+        """
+        Helper method that gets the item at some index
+        """
+        assert isinstance(index, int)
+        ind = self.get_index(index)
+        return self.contents[ind]
+
     def add_item(self, index, item, size=1):
         """
         Modifies self.contents by adding an item of some size to the list
@@ -137,9 +117,9 @@ class Column(Lst):
         @parameter item: the item to be added to the list at some index
         @parameter size: the positive integer that is the length of item to be inserted to the list
         """
-        myAssert(size > 0, BadArgument)
-        myAssert(index < len(self.contents), BadIndex)
-        myAssert(len(self.contents) - size >= index, BadSize)
+        assert size > 0
+        assert index < len(self.contents)
+        assert len(self.contents) - size >= index
         for i in range(index, index + size):
             if self.contents[i] != None:
                 raise BadArgument
@@ -163,13 +143,13 @@ class Column(Lst):
 
     def remove_item(self, index):
         """
-        Removes an item specified at an index and raises a BadIndex Exception if there is no item
+        Removes an item specified at an index and raises an exception if there is no item
         at the specified index
 
         @parameter index: a integer
         """
-        myAssert(index <= len(self.contents), BadArgument)
-        myAssert(isinstance(index, int), BadArgument)
+        assert isinstance(index, int)
+        assert index <= len(self.contents)
 
         # remove the item first
         if self.contents[index] not in [None, 0]:
@@ -197,7 +177,7 @@ class Column(Lst):
         """
         Sets the current label to a new label
         """
-        myAssert(isinstance(new_name, str), BadArgument)
+        assert isinstance(new_name, str)
         self.label = new_name
 
     def getLabel(self):

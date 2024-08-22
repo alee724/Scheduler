@@ -1,31 +1,30 @@
-import sys
-
-sys.path.insert(0, "../lib/scheduler/")
-from tkinter.ttk import *
-from tkinter import *
+from initial import *
+from constants import *
+from tkinter import Frame, Label, StringVar, Toplevel, Menu
+import tkinter.ttk as ttk
 from customer import *
-from service import *
 
 
-class CustomerFrame(Frame):
+class CustomerDetails(Frame):
     def __init__(self, parent, customer):
         """
-        Class representing the frame for a customer
-
-        Will load in data from a Customer object if there is one or create a new customer and
-        create a customer frame from customer data
-
-        The parent MUST be at least the base frame for the sheet or higher in the hierarchy,
-        may just set the parent as root if anything
+        A class representing the pop up frame that will appear to display a more detailed view
+        of a customer's needs
         """
-        Frame.__init__(self, parent, width=100, height=100)
+        Frame.__init__(self, parent, width=200, height=100, padx=1, pady=1)
         assert isinstance(customer, Customer)
+        if customer.getServed():
+            self.configure(background="green")
+        else:
+            self.configure(background="red")
 
         # basic attributes needed
         self.bind_name = list(self.bindtags())[0]
         self.expand = True
         self.parent = parent
         self.customer = customer
+        self.packed = False
+        self.rowspan = 1
 
         # grid configuration
         self.grid_rowconfigure(1, weight=1)
@@ -38,34 +37,102 @@ class CustomerFrame(Frame):
         self.price = StringVar()
 
         # Widgets using the above variables
-        name_label = Label(
+        self.name_label = Label(
             self,
             textvariable=self.name,
-            font=("Helvetica Mono", 10),
+            font=FONT,
             anchor="w",
         )
-        services_label = Label(
-            self, textvariable=self.services, font=("Helvetica Mono", 10), anchor="nw"
+        self.services_label = Label(
+            self, textvariable=self.services, font=FONT, anchor="nw"
         )
-        price_label = Label(
-            self, textvariable=self.price, font=("Helvetica Mono", 10), anchor="e"
+        self.price_label = Label(self, textvariable=self.price, font=FONT, anchor="e")
+
+        # ========== Grid Children Widgets
+        self.name_label.grid(row=0, column=0, sticky="nw")
+        self.services_label.grid(row=1, column=0, sticky="nsew")
+        self.price_label.grid(row=2, column=0, sticky="sew")
+
+
+class CustomerDetailsPop(Toplevel):
+    def __init__(self, parent, customer):
+        """
+        A toplevel pop up window that will display the customer data in greater detail
+        """
+        Toplevel.__init__(self, parent)
+        self.grid_rowconfigure(1, weight=1)
+
+        Label(self, text=f"{customer.getName()}", font=FONT).grid(
+            row=0, column=0, columnspan=2, sticky="nsew"
         )
+        ttk.Separator(self, orient="horizontal").grid(
+            column=0, columnspan=2, row=0, sticky="sew"
+        )
+
+        # Add a list view of services with their name and price
+        services = customer.getServices()
+        s_text = "\n".join(list(map(lambda s: s.getName(), services)))
+        p_list = list(map(lambda s: s.getPrice(), services))
+        p_text = "\n".join(list(map(lambda s: str(s.getPrice()), services)))
+        Label(self, text=s_text, font=FONT, justify=LEFT).grid(
+            column=0, row=1, sticky="nsw"
+        )
+        Label(self, text=p_text, font=FONT, justify=LEFT).grid(
+            column=1, row=1, sticky="nsw"
+        )
+        ttk.Separator(self, orient="horizontal").grid(
+            column=0, row=1, columnspan=2, sticky="swe"
+        )
+
+        # get the approximate total time it will take to do all the services
+        t_list = list(map(lambda s: s.getTime(), services))
+        t_time = CTime(0, 0)
+        for t in t_list:
+            t_time.add(t)
+
+        # add the total price and total approximate time it will take
+        Label(self, text=f"Total Price: {sum(p_list)}", anchor="w", font=FONT).grid(
+            column=0, row=2, sticky="nw", padx=(0, 5)
+        )
+        Label(
+            self, text=f"Total Time: {t_time.toString()}", anchor="e", font=FONT
+        ).grid(column=1, row=2, sticky="ne")
+
+
+class CustomerFrame(CustomerDetails):
+    def __init__(self, parent, customer):
+        """
+        Class representing the frame for a customer
+
+        Will load in data from a Customer object if there is one or create a new customer and
+        create a customer frame from customer data
+
+        The parent MUST be at least the base frame for the sheet or higher in the hierarchy,
+        may just set the parent as root if anything
+        """
+        super().__init__(parent, customer)
 
         # set the service and price string
         self.services_to_string()
         self.service_price_to_string()
 
-        # ========== Grid Children Widgets
-        name_label.grid(row=0, column=0, sticky="nw")
-        services_label.grid(row=1, column=0, sticky="nsew")
-        price_label.grid(row=2, column=0, sticky="sew")
-
+        # create the pop up menu once right clicking
         self.popup = Menu(self, tearoff=0)
+        self.popup.add_command(
+            label="details", command=lambda: CustomerDetailsPop(self, self.customer)
+        )
+        self.popup.add_separator()
         self.popup.add_command(label="Shrink/Expand")
         self.popup.add_command(label="Add Service")
         self.popup.add_command(label="Split")
         self.popup.add_separator()
-        self.popup.add_command(label="Delete", command=lambda: self.destroy())
+        self.popup.add_command(
+            label="Served", command=lambda: self.event_generate("<<VerifyServed>>")
+        )
+        self.popup.add_command(
+            label="Delete",
+            command=lambda: self.event_generate("<<VerifyDestroyCustomer>>"),
+        )
 
         # ========== Bindings and Bindtag ==========
         # binding for the widget to have some fixed size
@@ -77,7 +144,7 @@ class CustomerFrame(Frame):
         )
 
         # add binding for the menu to appear
-        self.bind("<Button-2>", self.popup_command)
+        self.bind("<Button-2>", lambda e: self.popup.tk_popup(e.x_root, e.y_root, 0))
 
         # binding for dnd
         self.bind("<ButtonPress-1>", self.on_press)
@@ -85,18 +152,19 @@ class CustomerFrame(Frame):
         self.bind("<ButtonRelease-1>", self.on_release)
 
         # transfer binding to parent
-        name_label.bindtags(list(name_label.bindtags()) + [self.bind_name])
-        services_label.bindtags(list(services_label.bindtags()) + [self.bind_name])
-        price_label.bindtags(list(price_label.bindtags()) + [self.bind_name])
+        self.name_label.bindtags(list(self.name_label.bindtags()) + [self.bind_name])
+        self.services_label.bindtags(
+            list(self.services_label.bindtags()) + [self.bind_name]
+        )
+        self.price_label.bindtags(list(self.price_label.bindtags()) + [self.bind_name])
 
-    def popup_command(self, e):
+    def get_details(self):
         """
-        Command for creating the visiual popup widget
+        Helper method for opening a toplevel window that displays the customer information in more
+        detail
         """
-        try:
-            self.popup.tk_popup(e.x_root, e.y_root, 0)
-        finally:
-            self.popup.grab_release()
+        tl = Toplevel(self)
+        CustomerFrame(tl, self.customer)
 
     def service_price_to_string(self):
         """
@@ -128,10 +196,7 @@ class CustomerFrame(Frame):
         if data != {}:
             wid.initCol = data["column"]
             wid.initRow = data["row"]
-            # also get rid of this an make the customer widget store the size data
             wid.rowspan = data["rowspan"]
-        else:
-            wid.rowspan = 1  # need to change this to the appropriate size
         wid._start_x = e.x
         wid._start_y = e.y
 
@@ -148,15 +213,4 @@ class CustomerFrame(Frame):
         """
         When the widget is released and needs to be grid in its new place
         """
-        wid = e.widget
-        x = self.winfo_x() + (self.winfo_width() // 2)
-        y = self.winfo_y() + 30
-        grid_data = self.parent.grid_location(x, y)
-        col = grid_data[0]
-        row = grid_data[1]
-        if True:  # replace True with a query to the sheet module
-            self.grid(
-                in_=self.winfo_toplevel(), column=col, row=row, rowspan=wid.rowspan
-            )
-
-
+        self.event_generate("<<VerifyMoveCustomer>>")

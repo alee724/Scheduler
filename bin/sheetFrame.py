@@ -1,16 +1,11 @@
-from tkinter.ttk import *
-from tkinter import *
-from ctime import *
-from customer import *
-from service import *
+from constants import *
+from tkinter import Frame, Label
+import tkinter.ttk as ttk
+from tkinter.constants import *
 from customerFrame import *
-import sys
-
-sys.path.insert(0, "../lib/scheduler/")
-
-COLUMN_W = 200
-ROW_H = 30
-TIME_W = 50
+from tkinter import Canvas, LabelFrame
+from sheet import ScheduleSheet
+import threading
 
 
 class EmployeeCanvas(Canvas):
@@ -40,16 +35,9 @@ class EmployeeCanvas(Canvas):
         )
 
         # binding for resizing the width of the frame to canvas width
-        self.bind("<<AddEmployee>>", self.resize)
-        self.bind("<Configure>", lambda e: [
-                  self.resize(e), self.unbind("<Configure>")])
+        self.bind("<Configure>", lambda e: [self.resize(e), self.unbind("<Configure>")])
 
-        # bindings for scrolling
-        self.bind(
-            "<<AddEmployee>>",
-            lambda e: self.configure(scrollregion=self.bbox("all")),
-            add="+",
-        )
+        # binding for the mousewheel
         self.bind_all(
             "<MouseWheel>",
             lambda e: self.xview_scroll(-1 * (e.delta), "units")
@@ -80,12 +68,12 @@ class EmployeeCanvas(Canvas):
         self.scroll_frame.grid_columnconfigure(
             index, weight=1, uniform="emp_cols", minsize=COLUMN_W
         )
-        Label(
-            self.scroll_frame, text=name, font=("Helvetoica", 24), anchor=CENTER
-        ).grid(column=index, row=0, sticky="nsew")
-        self.employees.append(name)
         self.right.grid(column=index + 1, row=0, sticky="nse")
-        self.event_generate("<<AddEmployee>>")
+        Label(self.scroll_frame, text=name, font=E_FONT, anchor=CENTER).grid(
+            column=index, row=0, sticky="nsew"
+        )
+        self.employees.append(name)
+        self.update_idletasks()
 
     def remove_employee(self, name):
         """
@@ -112,8 +100,7 @@ class TimeFrame(Frame):
         Frame.__init__(self, parent)
 
         # insert buffer frame at the top
-        Frame(self, borderwidth=1, relief="flat",
-              height=ROW_H // 2).pack(fill=X)
+        Frame(self, borderwidth=1, relief="flat", height=ROW_H // 2).pack(fill=X)
 
         start.add_time(minute=interval)
         # add the time labels to the base frame
@@ -124,14 +111,13 @@ class TimeFrame(Frame):
                 height=ROW_H,
                 width=TIME_W,
                 relief="flat",
-                font=("Helvetica", 18),
+                font=T_FONT,
                 labelanchor="e",
             ).pack(padx=(0, 1))
             start.add_time(minute=interval)
 
         # add the buffer frame at the end
-        Frame(self, borderwidth=1, relief="flat",
-              height=ROW_H // 2).pack(fill=X)
+        Frame(self, borderwidth=1, relief="flat", height=ROW_H // 2).pack(fill=X)
 
 
 class SheetFrame(Frame):
@@ -143,6 +129,7 @@ class SheetFrame(Frame):
         @parameter rows: is the number of rows in the sheet
         """
         Frame.__init__(self, parent, relief="flat", borderwidth=1)
+        self.grid_propagate(False)
         self.numCols = 0
         self.numRows = rows
 
@@ -159,11 +146,11 @@ class SheetFrame(Frame):
             self.numCols, weight=1, uniform="cols", minsize=COLUMN_W
         )
 
-        # create certical separators
-        Separator(self, orient="vertical").grid(
+        # create vertical separators
+        ttk.Separator(self, orient="vertical").grid(
             column=self.numCols, row=0, rowspan=self.numRows, sticky="nse"
         )
-        Separator(self, orient="vertical").grid(
+        ttk.Separator(self, orient="vertical").grid(
             column=self.numCols, row=0, rowspan=self.numRows, sticky="nsw"
         )
 
@@ -173,7 +160,6 @@ class SheetFrame(Frame):
 
         # increment the number of columns
         self.numCols += 1
-        self.event_generate("<<AddColumn>>")
 
     def add_hourlines(self):
         """
@@ -181,19 +167,19 @@ class SheetFrame(Frame):
         """
         for i in range(self.numRows):
             if i != 0:
-                s1 = Separator(self, orient="horizontal")
+                s1 = ttk.Separator(self, orient="horizontal")
                 s1.grid(column=0, row=i - 1, sticky="swe")
-                self.bind(
-                    "<<AddColumn>>",
+                self.bind_all(
+                    "<<VerifyAddColumn>>",
                     lambda e, s1=s1, i=i: s1.grid(
                         column=0, row=i - 1, columnspan=self.numCols, sticky="swe"
                     ),
                     add="+",
                 )
-            s2 = Separator(self, orient="horizontal")
+            s2 = ttk.Separator(self, orient="horizontal")
             s2.grid(column=0, row=i, sticky="new")
-            self.bind(
-                "<<AddColumn>>",
+            self.bind_all(
+                "<<VerifyAddColumn>>",
                 lambda e, s2=s2, i=i: s2.grid(
                     column=0, row=i, columnspan=self.numCols, sticky="new"
                 ),
@@ -211,8 +197,7 @@ class SheetCanvas(Canvas):
         Class representing the canvas containing the sheet of customers and being able to add
         customers, remove them, and modify them
         """
-        Canvas.__init__(self, parent, highlightthickness=0,
-                        background="purple")
+        Canvas.__init__(self, parent, highlightthickness=0, background="purple")
         self.numRows = rows
 
         # create the scrollable frame
@@ -243,15 +228,7 @@ class SheetCanvas(Canvas):
             (0, 0), window=scroll_frame, anchor="nw"
         )
 
-        # binding for resizing the width of the frame to canvas width
-        self.bind("<<AddColumn>>", self.resize)
-
-        # binding to make scrollable
-        self.bind(
-            "<<AddColumn>>",
-            lambda e: self.configure(scrollregion=self.bbox("all")),
-            add="+",
-        )
+        # binding for the mousewheel event
         self.bind_all(
             "<MouseWheel>",
             lambda e: self.yview_scroll(-1 * (e.delta), "units")
@@ -282,7 +259,6 @@ class SheetCanvas(Canvas):
         the canvas
         """
         self.sheet.add_column()
-        self.event_generate("<<AddColumn>>")
 
 
 class MainSheet(Frame):
@@ -297,45 +273,198 @@ class MainSheet(Frame):
         Frame.__init__(self, parent)
         for e in employees:
             assert isinstance(e, str)
-        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(1, weight=1)
+
+        # create the backend sheet variable that will be used to track any processes needed
+        self.employees = employees
+        self.verify = ScheduleSheet()
+        # TODO: add a binding later for a customer destroy command that will save the verify sheet of data
 
         numRows = (20 - 8) * 60 // 15
 
-        # create the three scrollable canvases
+        # create the two scrollable canvases
         self.emp_canvas = EmployeeCanvas(self)
         self.sheet = SheetCanvas(self, numRows)
 
-        # add any employees if any
-        for e in employees:
-            self.add_employee(e)
+        # create the queue frame
+        self.queue = Frame(self, borderwidth=0)
+        ttk.Separator(self.queue, orient="vertical").pack(side=RIGHT, fill=Y)
 
         # grid the two different canvases in their appropriate location
-        self.emp_canvas.grid(column=0, row=0, sticky="new")
-        self.sheet.grid(row=1, column=0, sticky="nsew")
+        self.emp_canvas.grid(column=1, row=0, sticky="new")
+        self.sheet.grid(row=1, column=1, sticky="nsew")
 
+        # create the bindings for checking with the backend and allowing certain processes to continue
+        self.bind_all("<<VerifyAddCustomer>>", self.queue_customer)
+        self.bind_all("<<VerifyMoveCustomer>>", self.move_customer)
+        # TODO, figure out why the error is raised
+        self.bind_all("<<VerifyDestroyCustomer>>", self.destroy_customer)
+        self.bind_all("<<VerifyServed>>", self.served_customer)
+        self.bind_all("<<VerifyAddColumn>>", self.add_employee)
+
+        # create binding for the canvases for resizing and setting the scrollregions
         self.bind_all(
-            "<KeyPress-a>",
+            "<<VerifyAddColumn>>",
             lambda e: [
-                self.add_employee(str(len(self.emp_canvas.employees))),
+                self.emp_canvas.resize(),
+                self.sheet.resize(),
+                self.emp_canvas.configure(scrollregion=self.emp_canvas.bbox("all")),
+                self.sheet.configure(scrollregion=self.sheet.bbox("all")),
             ],
+            add="+",
         )
 
-    def add_employee(self, name):
-        """
-        Adds an employee column to the sheet frame in the sheet canvas and a new label in the
-        employee frame in the employee canvas
+        # TODO: bind this to an event thrown by the calendar from changning dates later so that the sheet is also changed automatically
+        self.after(
+            0, lambda: threading.Thread(target=self.add_employee_list()).start()
+        )
 
-        @parameter name: str
-        """
-        self.emp_canvas.add_employee(name)
-        self.sheet.add_column()
+    def add_employee_list(self):
+        # add any employees if any
+        for e in self.employees:
+            self.add_employee(name=e)
 
-    def remove_employee(self, name):
-        """
-        Removes an employee column if and only if the employee column is empty
+        # fix the screen
+        self.event_generate("<<VerifyAddColumn>>")
+        self.update_idletasks()
 
-        Uses the backend to check
+    def served_customer(self, e):
         """
-        if True:  # add check from backend
+        Helper method for changing the state of a customer's served attribute to true or false
+        """
+        wid = e.widget
+        data = wid.grid_info()
+        state = self.verify.serve_customer(data["column"], data["row"])
+        if state:
+            wid.configure(background="green")
+        else:
+            wid.configure(background="red")
+
+    def destroy_customer(self, e):
+        """
+        Helper method to check the viability to destroy a customer at some location
+        """
+        # TODO: Can easily make this shorter just got to make sure the print statement never triggers
+        wid = e.widget
+        wid.unbind("<Button-2>")
+        g_data = wid.grid_info()
+
+        try:
+            wid.pack_info()
+            wid.destroy()
+            self.verify.queue -= 1
+            if self.verify.queue == 0:
+                self.queue.grid_forget()
+        except:
+            if self.verify.remove_customer(g_data["column"], g_data["row"]):
+                wid.destroy()
+            else:
+                print("temporary, something went wrong")
+
+    def move_customer(self, e):
+        """
+        Helper method for verifying whether a customer can be moved to a specific grid in the sheet
+        """
+        widget = e.widget
+
+        x = (
+            widget.winfo_x()
+            - self.queue.winfo_width()
+            - TIME_W
+            + (widget.winfo_width() // 2)
+        )
+        y = widget.winfo_y() - ROW_H + 20
+        grid_data = self.sheet.sheet.grid_location(x, y)
+        finalCol = grid_data[0]
+        finalRow = grid_data[1]
+
+        # if the widget is queued and not yet added to the sheet
+        if widget.packed == True:
+            # check with the backend
+            if self.verify.add_customer(finalCol, finalRow, widget.c_data):
+                # grid the customer to the sheet
+                widget.grid(
+                    in_=self.sheet.sheet,
+                    column=finalCol,
+                    row=finalRow,
+                    rowspan=widget.rowspan,
+                    sticky="nsew",
+                )
+                self.verify.queue -= 1
+                if self.verify.queue == 0:
+                    self.queue.grid_forget()
+                widget.packed = False
+            else:
+                # pack back to queue
+                widget.pack(in_=self.queue, fill=X)
+        # when the widget is already in the sheet and is being moved
+        else:
+            # check with backend
+            if self.verify.move_customer(
+                widget.initCol, widget.initRow, finalCol, finalRow
+            ):
+                # grid to new location
+                widget.grid(
+                    in_=self.sheet.sheet,
+                    column=finalCol,
+                    row=finalRow,
+                    rowspan=widget.rowspan,
+                    sticky="nsew",
+                )
+            else:
+                # grid back in original place
+                widget.grid(
+                    in_=self.sheet.sheet,
+                    column=widget.initCol,
+                    row=widget.initRow,
+                    rowspan=widget.rowspan,
+                    sticky="nsew",
+                )
+        widget.update_idletasks()
+
+    def queue_customer(self, e):
+        """
+        Helper method for retrieving data from the event widget and queuing a customer frame
+        """
+        customer = e.widget.c_data
+        if customer != None:
+            if self.verify.queue == 0:
+                self.queue.configure(width=200)
+                # generate the <<VerifyAddColumn>> event to fix the scroll region for the canvas
+                self.event_generate("<<VerifyAddColumn>>")
+            cust_obj = Customer.fromJSON(customer)
+            cf = CustomerFrame(self, cust_obj)
+            cf.pack(in_=self.queue)
+            cf.packed = True
+            cf.c_data = cust_obj
+            cf.rowspan = self.verify.time_to_length(cust_obj.getTime())
+
+            self.verify.queue += 1
+            if self.verify.queue == 1:
+                # grid the queue frame
+                self.queue.grid(column=0, row=0, rowspan=2, sticky="nsw")
+
+    def add_employee(self, event=None, name=None):
+        """
+        Helper method that adds a new employee column to the sheet by getting the label from the
+        event widget that triggered the <<VerifyAddColumn>> event
+        """
+        if event != None:
+            wid = event.widget
+            if wid != self:
+                name = wid.employee
+                # reset the variable to None so that there won't be any duplicates when adjusting canvas sizes and such
+                wid.employee = None
+        if name != None and self.verify.add_column(name):
+            self.emp_canvas.add_employee(name)
+            self.sheet.add_column()
+
+    def remove_employee(self, e):
+        """
+        Helper method that removes an employee column if the sheet passes the check in the backend
+        """
+        wid = e.widget
+        name = wid.employee
+        if self.verify.remove_column(name):
             self.emp_canvas.remove_employee(name)

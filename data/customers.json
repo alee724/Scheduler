@@ -1,1 +1,1 @@
-[]
+[{"first": "fghgtdf", "last": "", "services": [], "phone": "1234567890", "served": false}, {"first": "bcd", "last": "", "services": [], "phone": "0987654321", "served": false}, {"first": "test", "last": "", "services": [{"name": "Ear Candling", "price": 25, "time": {"hour": 0, "minute": 10}, "abbreviation": "Candling", "sorted": "None"}], "phone": "0000000000", "served": false}]
