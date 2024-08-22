@@ -6,6 +6,7 @@ from customerFrame import *
 from tkinter import Canvas, LabelFrame
 from sheet import ScheduleSheet
 import threading
+import json
 
 
 class EmployeeCanvas(Canvas):
@@ -262,7 +263,7 @@ class SheetCanvas(Canvas):
 
 
 class MainSheet(Frame):
-    def __init__(self, parent, employees=[]):
+    def __init__(self, parent, employees=[], json_dict=None):
         """
         Class for the frame that will contain two canvases, one being the canvas for employee names
         and the other canvas for the sheet containing the customers that will be served for that
@@ -279,9 +280,8 @@ class MainSheet(Frame):
         # create the backend sheet variable that will be used to track any processes needed
         self.employees = employees
         self.verify = ScheduleSheet()
-        # TODO: add a binding later for a customer destroy command that will save the verify sheet of data
 
-        numRows = (20 - 8) * 60 // 15
+        numRows = (END_TIME - START_TIME) * 60 // 15
 
         # create the two scrollable canvases
         self.emp_canvas = EmployeeCanvas(self)
@@ -303,6 +303,9 @@ class MainSheet(Frame):
         self.bind_all("<<VerifyServed>>", self.served_customer)
         self.bind_all("<<VerifyAddColumn>>", self.add_employee)
 
+        # set the new protocol for when the window is being closed
+        self.winfo_toplevel().protocol("WM_DELETE_WINDOW", self.save_json_sheet)
+
         # create binding for the canvases for resizing and setting the scrollregions
         self.bind_all(
             "<<VerifyAddColumn>>",
@@ -315,10 +318,47 @@ class MainSheet(Frame):
             add="+",
         )
 
-        # TODO: bind this to an event thrown by the calendar from changning dates later so that the sheet is also changed automatically
-        self.after(
-            0, lambda: threading.Thread(target=self.add_employee_list()).start()
-        )
+        # ========== Logic for loading in data ==========
+        if json_dict == None:
+            self.after(
+                0, lambda: threading.Thread(target=self.add_employee_list()).start()
+            )
+        else:
+            self.after(
+                0, lambda: threading.Thread(target=self.load_json_sheet(json_dict)).start()
+            )
+
+    def load_json_sheet(self, json_dict):
+        """
+        Helper method for loading in the data from a json dictionary
+        """
+        index = 0
+        for col in json_dict["columns"]:
+            self.add_employee(name=col["label"])
+            for cust in col["items"]:
+                row_ind = cust[0]
+                rowspan = cust[2]
+                c = Customer.fromJSON(cust[1])
+                cf = CustomerFrame(self, c)
+                cf.grid(
+                    in_=self.sheet.sheet, column=index, row=row_ind, rowspan=rowspan, sticky="nsew"
+                )
+            index += 1
+
+        # set the verify variable to the json_dict 
+        self.verify.fromJSON(json_dict["columns"])
+
+        # fix the screen
+        self.event_generate("<<VerifyAddColumn>>")
+        self.update_idletasks()
+
+    def save_json_sheet(self):
+        """
+        A helper function describing the new protocol to be taken when the widow is being closed
+        """
+        with open(DAY_PATH, "w") as file:
+            json.dump(self.verify.toJSON(), file)
+        self.winfo_toplevel().destroy()
 
     def add_employee_list(self):
         # add any employees if any
@@ -345,22 +385,20 @@ class MainSheet(Frame):
         """
         Helper method to check the viability to destroy a customer at some location
         """
-        # TODO: Can easily make this shorter just got to make sure the print statement never triggers
         wid = e.widget
-        wid.unbind("<Button-2>")
         g_data = wid.grid_info()
 
         try:
+            # if the widget is in the queue
             wid.pack_info()
             wid.destroy()
             self.verify.queue -= 1
             if self.verify.queue == 0:
                 self.queue.grid_forget()
         except:
+            # else when it is grid in the sheet
             if self.verify.remove_customer(g_data["column"], g_data["row"]):
                 wid.destroy()
-            else:
-                print("temporary, something went wrong")
 
     def move_customer(self, e):
         """
@@ -374,7 +412,7 @@ class MainSheet(Frame):
             - TIME_W
             + (widget.winfo_width() // 2)
         )
-        y = widget.winfo_y() - ROW_H + 20
+        y = widget.winfo_y() - ROW_H + C_BUFF_TOP
         grid_data = self.sheet.sheet.grid_location(x, y)
         finalCol = grid_data[0]
         finalRow = grid_data[1]

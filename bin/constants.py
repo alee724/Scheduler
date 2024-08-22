@@ -4,6 +4,7 @@ E_PATH = "../data/employees.json"
 C_PATH = "../data/customers.json"
 SCH_PATH = "../data/schedule.json"
 SRT_PATH = "../data/sort.json"
+DAY_PATH = "../drive/day.json"
 
 # ========== Constants for fonts ==========
 FONT = ("Hack Nerd Font Mono", 18)  # general font
@@ -21,3 +22,10 @@ LB_WIDTH = 50  # list box width for popups
 COLUMN_W = 200
 ROW_H = 30
 TIME_W = 50
+
+# the vertical buffer for where the customer frame gets its coordinates read
+C_BUFF_TOP = 10
+
+# ========== Constants for the Sheet Attributes ==========
+START_TIME = 8  # in military time
+END_TIME = 20  # in military time

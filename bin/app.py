@@ -213,10 +213,15 @@ class MainApp(Frame):
                 employees = json.load(file)[day]
             except:
                 employees = None
-        # TODO note the possible arg for employees
-        sheet = MainSheet(self, employees)
-        # TODO: is the below needed?
-        self.bind_all("<Visibility>", lambda e: self.update_idletasks())
+        with open(DAY_PATH, "r") as file:
+            try:
+                json_dict = json.load(file)
+                if json_dict == {}:
+                    json_dict = None
+            except:
+                json_dict = None
+        sheet = MainSheet(self, employees, json_dict)
+        # TODO: add the bindings such that when the date changes so does the sheet
 
         # grid the sheet
         sheet.grid(column=0, row=3, sticky="nsew", padx=4)

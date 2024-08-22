@@ -153,7 +153,7 @@ class ScheduleSheet(Grid):
             "interval": self.interval,
             "columns": column_json_list,
         }
-        return json.dumps(json_dict)
+        return json_dict
 
     def fromJSON(self, column_lst):
         columns = []

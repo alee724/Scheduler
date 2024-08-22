@@ -1,7 +1,20 @@
 from initial import *
-from tkinter import Frame, Label, Button, Toplevel, messagebox
+from tkinter import (
+    Frame,
+    Label,
+    Button,
+    Toplevel,
+    messagebox,
+    StringVar,
+    Entry,
+    Listbox,
+    IntVar,
+    Checkbutton,
+)
 import tkinter.ttk as ttk
+from tkinter.constants import *
 from customer import *
+from constants import *
 import json
 
 SRT_KEYS = ("Nail Care", "Foot Care", "Lash", "Spa", "Waxing", "Massage", "None")
@@ -396,7 +409,7 @@ class EmployeeView(ViewFrame):
 
         # adds a button to the left side to add employees
         add_button = Button(self, text="Add", font=FONT, command=self.add_employee)
-        add_button.grid(column=0, row=2, sticky="w")
+        add_button.grid(column=0, row=2, sticky="e", padx=(0, 100))
 
         # adds a button for adding to the sheet itself
         sheet_button = Button(
@@ -405,7 +418,7 @@ class EmployeeView(ViewFrame):
             font=FONT,
             command=self.add_column,
         )
-        sheet_button.grid(column=0, row=2, sticky="w", padx=(70, 0))
+        sheet_button.grid(column=0, row=2, sticky="w")
         self.search()
 
     def search(self, *args):
@@ -846,7 +859,7 @@ class CustomerView(ViewFrame):
         ).grid(column=3, row=0, sticky="nsew")
 
         # create an add/modify button
-        Button(self, text="Add/Modify", font=FONT, command=self.create_customer).grid(
+        Button(self, text="Add", font=FONT, command=self.create_customer).grid(
             column=0, columnspan=2, row=2, sticky="nw"
         )
 
@@ -871,7 +884,7 @@ class CustomerView(ViewFrame):
         """
         Inherit the delete method and update the list of customers
         """
-        super().destroy(string)
+        super().delete(string)
         self.event_generate("<<UpdateCustomers>>")
 
     def fill(self, e):
@@ -882,6 +895,8 @@ class CustomerView(ViewFrame):
 
         self.nameVar.set(string[0])
         self.phoneVar.set(string[1])
+
+        self.lb.selection_set(0, 0)
 
     def create_customer(self):
         """

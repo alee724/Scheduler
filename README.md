@@ -22,6 +22,7 @@ Scheduler backend development using python. Finished the backend work for the sc
 - need to add scroll region LAST no matter what. Else it starts messing with the scroll region leading it to go kinda everywhere but where you want it to be 
 - ...upgrading python seems to have solved the button issues... sigh
 - one my biggest mistakes yet may be not using the #TODO tag where I made comments about further working on things...
+- decided against setting the initial window to a fullscreen in size due to the popup windows automatically being opened in the default window and not the current window making things annoying
 
 
 # Virtual Events:       
