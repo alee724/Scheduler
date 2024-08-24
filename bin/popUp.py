@@ -208,7 +208,7 @@ class ServiceAdd(Frame):
         Label(self, text="Category", font=FONT).grid(column=0, row=5, sticky="nw")
 
         self.category = StringVar()
-        cb = ttk.Combobox(self, textvariable=self.category)
+        cb = ttk.Combobox(self, textvariable=self.category, font=FONT)
         cb["values"] = SRT_KEYS
 
         cb.grid(column=1, row=5, sticky="new")
@@ -706,14 +706,16 @@ class CreateCustomer(Frame):
         )
 
         self.phone = StringVar()
-        Entry(
+        self.cb = ttk.Combobox(
             self,
             textvariable=self.phone,
             font=FONT,
             width=10,
             validate="all",
             validatecommand=(self.register(lambda s: s.isdigit()), "%S"),
-        ).grid(column=3, row=0, sticky="new")
+        )
+        self.cb.grid(column=3, row=0, sticky="new")
+        self.fill_cb()
 
         # create the button for adding a customer to the queue
         queue = Button(self, text="Queue", font=FONT, command=self.queue_customer)
@@ -726,6 +728,47 @@ class CreateCustomer(Frame):
         # create the buffer frame so that it can be deleted
         self.bf = Frame(self)
         self.initialize()
+
+        # create the trace for changing the values contained in the phone combobox
+        self.phone.trace("w", self.fill_cb)
+        self.name.trace("w", self.fill_cb)
+
+        # create a binding for when a item is selected in the combobox
+        self.cb.bind(
+            "<<ComboboxSelected>>",
+            lambda e: self.name.set(
+                list(filter(lambda c: c.getPhone() == self.cb.get(), self.customers))[
+                    0
+                ].getName(),
+            ),
+        )
+
+    def fill_cb(self, *args):
+        """
+        Helper method for when the entries are typed into and fill the combobox accordingly
+        """
+        name = self.name.get().strip()
+        phone = self.phone.get().strip()
+        phone_list = list(map(lambda c: c.getPhone(), self.customers))
+
+        # if the phone entry is not empty then sort with the phone entry as priority
+        if phone != "":
+            phone_list = list(
+                map(
+                    lambda c: c.getPhone(),
+                    filter(lambda c: phone in c.getPhone(), self.customers),
+                )
+            )
+        # else if the name entry is not empty sort by the name
+        elif name != "":
+            phone_list = list(
+                map(
+                    lambda c: c.getPhone(),
+                    filter(lambda c: name in c.getName(), self.customers),
+                )
+            )
+        # set the values in the combobox
+        self.cb["values"] = phone_list
 
     def initialize(self):
         """

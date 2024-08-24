@@ -283,8 +283,13 @@ class MainSheet(Frame):
 
         numRows = (END_TIME - START_TIME) * 60 // 15
 
+        # create a buffer frame so that I can raise the employee canvas above customer widgets
+        self.bufferFrame = Frame(self)
+        self.bufferFrame.grid_columnconfigure(0, weight=1)
+        self.bufferFrame.grid_rowconfigure(0, weight=1)
+
         # create the two scrollable canvases
-        self.emp_canvas = EmployeeCanvas(self)
+        self.emp_canvas = EmployeeCanvas(self.bufferFrame)
         self.sheet = SheetCanvas(self, numRows)
 
         # create the queue frame
@@ -292,7 +297,8 @@ class MainSheet(Frame):
         ttk.Separator(self.queue, orient="vertical").pack(side=RIGHT, fill=Y)
 
         # grid the two different canvases in their appropriate location
-        self.emp_canvas.grid(column=1, row=0, sticky="new")
+        self.bufferFrame.grid(column=1, row=0, sticky="new")
+        self.emp_canvas.grid(column=0, row=1, sticky="nsew")
         self.sheet.grid(row=1, column=1, sticky="nsew")
 
         # create the bindings for checking with the backend and allowing certain processes to continue
@@ -325,7 +331,10 @@ class MainSheet(Frame):
             )
         else:
             self.after(
-                0, lambda: threading.Thread(target=self.load_json_sheet(json_dict)).start()
+                0,
+                lambda: threading.Thread(
+                    target=self.load_json_sheet(json_dict)
+                ).start(),
             )
 
     def load_json_sheet(self, json_dict):
@@ -341,16 +350,24 @@ class MainSheet(Frame):
                 c = Customer.fromJSON(cust[1])
                 cf = CustomerFrame(self, c)
                 cf.grid(
-                    in_=self.sheet.sheet, column=index, row=row_ind, rowspan=rowspan, sticky="nsew"
+                    in_=self.sheet.sheet,
+                    column=index,
+                    row=row_ind,
+                    rowspan=rowspan,
+                    sticky="nsew",
                 )
             index += 1
 
-        # set the verify variable to the json_dict 
+        # set the verify variable to the json_dict
         self.verify.fromJSON(json_dict["columns"])
 
         # fix the screen
         self.event_generate("<<VerifyAddColumn>>")
         self.update_idletasks()
+
+        # lift the employee buffer frame and the queue frame
+        self.queue.lift()
+        self.bufferFrame.lift()
 
     def save_json_sheet(self):
         """
@@ -368,6 +385,10 @@ class MainSheet(Frame):
         # fix the screen
         self.event_generate("<<VerifyAddColumn>>")
         self.update_idletasks()
+
+        # lift the employee buffer frame and the queue frame
+        self.queue.lift()
+        self.bufferFrame.lift()
 
     def served_customer(self, e):
         """
@@ -459,6 +480,8 @@ class MainSheet(Frame):
                     rowspan=widget.rowspan,
                     sticky="nsew",
                 )
+        self.bufferFrame.lift()
+        self.queue.lift()
         widget.update_idletasks()
 
     def queue_customer(self, e):

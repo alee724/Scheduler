@@ -1,6 +1,7 @@
 from initial import *
 from constants import *
 from tkinter import Frame, Label, StringVar, Toplevel, Menu
+from tkinter.constants import *
 import tkinter.ttk as ttk
 from customer import *
 
