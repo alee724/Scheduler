@@ -7,7 +7,6 @@ from sheetFrame import MainSheet
 from constants import *
 import json
 
-
 class CalendarFrame(Frame):
     def __init__(self, parent):
         """

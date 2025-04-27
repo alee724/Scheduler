@@ -4,17 +4,19 @@ Scheduler backend development using python. Finished the backend work for the sc
 # TODO:
 - make a server 
     - perhaps instead do ssh by making the ip static and making it such that you can connect to a certain computer from home 
-- connect to google drive 
-- need to retest the service, customer, and employee modules as I needed to changed the __eq__ definition
+- need to retest the service, customer, and employee modules as I needed to changed the __eq__ definition and some function to return boolean values to be able to check between front and back end
 - change the entries in the customer pop up to comboboxes so that we can search for a customer with an input and automatically input data
 - need to test saving and loading a day 
 
 # ISSUES:
 - need to fix up a lot of the comments 
 - need for optimizing code in a lot of places, mostly backend 
-- issue of layering frames causing customer frames to appear above employee frames
+- the text in customer frames are not properly placed 
+- need to figure out how to set the employee labels where given a deletion, same for the maion sheet 
+- forgot to add a delete button for the employees 
 
 # NOTES: 
+- maybe color code the columns with adjacent columns having relatively opposite colors on the color wheel 
 - maybe change column.py such that the place holders are not all 0s but scale with "distance" from the item index 
 - may use the toast module in the ttkbootstrap for notifications from outside sources, i.e. a phone call, payments from card reader, etc.
 

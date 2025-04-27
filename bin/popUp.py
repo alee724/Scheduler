@@ -457,8 +457,7 @@ class EmployeeView(ViewFrame):
         if employee in self.view_list:
             messagebox.showwarning(
                 self,
-                message=f"The employee {
-                    employee} is already in the list of employees",
+                message=f"The employee {employee} is already in the list of employees",
             )
         elif employee == "":
             messagebox.showwarning(
@@ -855,14 +854,13 @@ class CreateCustomer(Frame):
             )
             pass
         else:
-            phone = "0000000000"
             c = Customer(first, last, phone, self.checked)
             # raise event to send data to the verify sheet
             self.c_data = c.toJSON()
             self.event_generate("<<VerifyAddCustomer>>")
 
             # add the customer to the list of customers and update the list in data
-            if c not in self.customers:
+            if phone != "" and c not in self.customers:
                 self.customers.append(c)
                 self.event_generate("<<UpdateCustomers>>")
 
